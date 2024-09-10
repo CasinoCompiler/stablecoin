@@ -34,6 +34,13 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     error DecentralizedStableCoin__CannotRecoverFromStablecoinAddress();
 
     /**
+     * Events
+     */
+    event TokensMinted(address indexed to, uint256 indexed amount);
+    event TokensBurned(address indexed from, uint256 indexed amount);
+    event ERC20Recovered(address indexed token, address indexed to, uint256 indexed amount);
+
+    /**
      * Constructor
      */
     constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) Ownable(msg.sender) {}
@@ -48,11 +55,12 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
      *  @param _amount  Amount to mint.
      *  @notice         Calls _mint from OpenZeppelin standard ERC20 contract.
      */
-    function mint(address _to, uint256 _amount) external Ownable.onlyOwner() returns (bool) {
+    function mint(address _to, uint256 _amount) external onlyOwner returns (bool) {
         if (_amount <= 0) {
             revert DecentralizedStableCoin__MustMintMoreThanZero();
         }
         _mint(_to, _amount);
+        emit TokensMinted(_to, _amount);
         return true;
     }
 
@@ -61,16 +69,16 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
      *      Implements checks for the amount burned.
      *      Implements parent burn logic thereafter.
      */
-    function burn(uint256 _amount) public override Ownable.onlyOwner() {
+    function burn(uint256 _amount) public override onlyOwner {
         uint256 balance = balanceOf(msg.sender);
         if (_amount <= 0) {
             revert DecentralizedStableCoin__MustBurnMoreThanZero();
         }
         if (_amount > balance) {
             revert DecentralizedStableCoin__BurnAmountGreaterThanUserBalance();
-        } else {
-            super.burn(_amount);
         }
+        super.burn(_amount);
+        emit TokensBurned(msg.sender, _amount);
     }
 
     /**
@@ -79,11 +87,12 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
      * @param   tokenAddress The address of the token to recover
      * @param   tokenAmount The amount of tokens to recover
      */
-    function recoverERC20(address tokenAddress, uint256 tokenAmount) external Ownable.onlyOwner() {
+    function recoverERC20(address tokenAddress, uint256 tokenAmount) external onlyOwner {
         if (tokenAddress == address(this)) {
             revert DecentralizedStableCoin__CannotRecoverFromStablecoinAddress();
         }
         IERC20(tokenAddress).transfer(owner(), tokenAmount);
+        emit ERC20Recovered(tokenAddress, owner(), tokenAmount);
     }
 
     /**
