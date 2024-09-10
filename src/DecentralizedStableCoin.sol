@@ -46,7 +46,7 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
      *  @dev            Function to mint new stablecoin.
      *  @param _to      Address to mint to.
      *  @param _amount  Amount to mint.
-     *  @notice         Calls _mint from OpenZeppelin standard ERC20 contract. 
+     *  @notice         Calls _mint from OpenZeppelin standard ERC20 contract.
      */
     function mint(address _to, uint256 _amount) external Ownable.onlyOwner() returns (bool) {
         if (_amount <= 0) {
