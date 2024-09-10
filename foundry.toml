@@ -4,6 +4,7 @@ src = "src"
 out = "out"
 libs = ["lib"]
 remappings = [
+    "@forge/=lib/forge-std/",
     "@oz/=lib/openzeppelin-contracts/", 
     "@chainlink/=lib/chainlink",
     "@devops/=lib/foundry-devops"
