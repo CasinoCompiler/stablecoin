@@ -12,9 +12,9 @@ pragma solidity ^0.8.18;
  *          The contract is governed by DSCEngine.
  *          The contract implements the OpenZeppelin Ownable Contract
  *          to ensure OnlyOwner can mint and burn tokens.
- * 
+ *
  *          WARNING:    Although contract is able to recover ERC20 tokens
- *                      DO NOT SEND ERC20 TOKENS TO THIS CONTRACT    
+ *                      DO NOT SEND ERC20 TOKENS TO THIS CONTRACT
  */
 
 /**
@@ -23,7 +23,6 @@ pragma solidity ^0.8.18;
 import {ERC20Burnable, ERC20} from "@oz/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {Ownable} from "@oz/contracts/access/Ownable.sol";
 import {IERC20} from "@oz/contracts/token/ERC20/IERC20.sol";
-// @Order Imports, Interfaces, Libraries, Contracts
 
 contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     /**
@@ -35,31 +34,20 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     error DecentralizedStableCoin__CannotRecoverFromStablecoinAddress();
 
     /**
-     * Type Declarations
-     */
-
-    /**
-     * State Variables
-     */
-
-    /**
-     * Events
-     */
-
-    /**
      * Constructor
      */
     constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) Ownable(msg.sender) {}
 
     /**
-     * Modifiers
+     * Functions
      */
 
     /**
-     * Functions
+     *  @dev            Function to mint new stablecoin.
+     *  @param _to      Address to mint to.
+     *  @param _amount  Amount to mint.
+     *  @notice         Calls _mint from OpenZeppelin standard ERC20 contract. 
      */
-    // @Order recieve, fallback, external, public, internal, private
-
     function mint(address _to, uint256 _amount) external Ownable.onlyOwner() returns (bool) {
         if (_amount <= 0) {
             revert DecentralizedStableCoin__MustMintMoreThanZero();
