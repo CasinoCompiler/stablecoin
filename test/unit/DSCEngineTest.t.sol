@@ -44,6 +44,13 @@ contract DSCEngineTest is Test {
         assertEq(address(dscEngine), dsc.getOwner());
     }
 
+    function test_MockEthAndMockBtcMintedToAddress() public view {
+        //Eth
+        assert(ERC20Mock(tokenAddresses[0]).balanceOf(bob) == 20);
+        //btc
+        assert(ERC20Mock(tokenAddresses[1]).balanceOf(bob) == 10); 
+    }
+
     /*//////////////////////////////////////////////////////////////
                              DSC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
