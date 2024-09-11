@@ -48,7 +48,7 @@ contract DSCEngineTest is Test {
         //Eth
         assert(ERC20Mock(tokenAddresses[0]).balanceOf(bob) == 20);
         //btc
-        assert(ERC20Mock(tokenAddresses[1]).balanceOf(bob) == 10); 
+        assert(ERC20Mock(tokenAddresses[1]).balanceOf(bob) == 10);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -70,47 +70,47 @@ contract DSCEngineTest is Test {
         dsc.mint(bob, 0);
     }
 
-    function test_CanMintDSC() public mintDSCToAccount(bob, MINT_AMOUNT){
+    function test_CanMintDSC() public mintDSCToAccount(bob, MINT_AMOUNT) {
         assert(dsc.balanceOf(bob) == 100);
     }
 
-    function test_mintEmitsEvent() public{
+    function test_mintEmitsEvent() public {
         vm.prank(address(dscEngine));
-        vm.expectEmit(true,true,false,false,address(dsc));
+        vm.expectEmit(true, true, false, false, address(dsc));
         emit TokensMinted(bob, MINT_AMOUNT);
         dsc.mint(bob, MINT_AMOUNT);
     }
 
-    function test_BurnErrorsOndBurningZero() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT){
+    function test_BurnErrorsOndBurningZero() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT) {
         vm.prank(address(dscEngine));
         vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__MustBurnMoreThanZero.selector);
         dsc.burn(0);
     }
 
-    function test_BurnErrorsOndBurningMoreThanBalance() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT){
+    function test_BurnErrorsOndBurningMoreThanBalance() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT) {
         vm.prank(address(dscEngine));
         vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__BurnAmountGreaterThanUserBalance.selector);
         dsc.burn(101);
     }
 
-    function test_CanBurnDSC() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT){
-        hoax(address(dscEngine), GAS_MONEY); 
+    function test_CanBurnDSC() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT) {
+        hoax(address(dscEngine), GAS_MONEY);
         dsc.burn(20);
 
         assert(dsc.balanceOf(address(dscEngine)) == 80);
     }
 
-    function test_BurnEmitsEvent() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT){
+    function test_BurnEmitsEvent() public mintDSCToAccount(address(dscEngine), MINT_AMOUNT) {
         vm.prank(address(dscEngine));
-        vm.expectEmit(true,true,false,false,address(dsc));
-        emit TokensBurned(address(dscEngine), BURN_AMOUNT); 
+        vm.expectEmit(true, true, false, false, address(dsc));
+        emit TokensBurned(address(dscEngine), BURN_AMOUNT);
         dsc.burn(BURN_AMOUNT);
 
         assert(dsc.balanceOf(address(dscEngine)) == 80);
     }
 
     // Will implement later
-    function test_CanRecoverERC() public{}
+    function test_CanRecoverERC() public {}
 
     /*//////////////////////////////////////////////////////////////
                                PRICEFEED
@@ -119,7 +119,8 @@ contract DSCEngineTest is Test {
     function test_GetUsdValue() public view {
         uint256 ethAmount = 10e18;
         // 10e18 * $2000 == 20000e18
-        uint256 expectedValue = (((uint256(dscEngine.getLatestRoundDataValue(tokenAddresses[0])) * 1e10) * ethAmount)) / 1e18;
+        uint256 expectedValue =
+            (((uint256(dscEngine.getLatestRoundDataValue(tokenAddresses[0])) * 1e10) * ethAmount)) / 1e18;
 
         uint256 actualValue = dscEngine.getUsdValue(tokenAddresses[0], ethAmount);
 
@@ -137,5 +138,4 @@ contract DSCEngineTest is Test {
         dscEngine.depositCollateral(tokenAddresses[0], 0);
         vm.stopPrank();
     }
-
 }
