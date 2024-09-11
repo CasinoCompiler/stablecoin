@@ -5,11 +5,13 @@ import {Test, console} from "@forge/src/Test.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
+import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract DSCEngineTest is Test {
     DeployDSC deployDSC;
     DSCEngine dscEngine;
     DecentralizedStableCoin dsc;
+    HelperConfig config;
 
     address bob = makeAddr("bob");
     address alice = makeAddr("alice");
@@ -18,9 +20,16 @@ contract DSCEngineTest is Test {
     uint256 constant BURN_AMOUNT = 20;
     uint256 constant GAS_MONEY = 1 ether;
 
+    address[] public tokenAddresses;
+    address[] public priceFeedAddresses;
+
     function setUp() public {
         deployDSC = new DeployDSC();
-        (dsc, dscEngine) = deployDSC.run();
+        (dsc, dscEngine, config) = deployDSC.run();
+        (HelperConfig.Token memory weth, HelperConfig.Token memory wbtc) = config.activeNetworkConfig();
+
+        tokenAddresses = [weth.tokenAddress, wbtc.tokenAddress];
+        priceFeedAddresses = [weth.pricefeedAddress, wbtc.pricefeedAddress];
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -97,5 +106,15 @@ contract DSCEngineTest is Test {
     /*//////////////////////////////////////////////////////////////
                                PRICEFEED
     //////////////////////////////////////////////////////////////*/
+
+    function test_GetUsdValue() public view {
+        uint256 ethAmount = 10e18;
+        // 10e18 * $2000 == 20000e18
+        uint256 expectedValue = 20000e18;
+
+        uint256 actualValue = dscEngine.getUsdValue(tokenAddresses[0], ethAmount);
+
+        assertEq(expectedValue, actualValue);
+    }
 
 }
