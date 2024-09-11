@@ -14,7 +14,7 @@ contract DeployDSC is Script {
     DecentralizedStableCoin dsc;
     DSCEngine dscEngine;
 
-    function run() external returns (DecentralizedStableCoin, DSCEngine) {
+    function run() external returns (DecentralizedStableCoin, DSCEngine, HelperConfig) {
         HelperConfig config = new HelperConfig();
         (HelperConfig.Token memory weth, HelperConfig.Token memory wbtc) = config.activeNetworkConfig();
 
@@ -28,6 +28,6 @@ contract DeployDSC is Script {
         dsc.transferOwnership(address(dscEngine));
 
         vm.stopBroadcast();
-        return (dsc, dscEngine);
+        return (dsc, dscEngine, config);
     }
 }
