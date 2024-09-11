@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.20;
 
 /**
  * @title   DSCEngine
@@ -41,6 +41,8 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__CollateralTypeNotAllowed();
     error DSCEngine__PricefeedCollectionError();
     error DSCEngine__TransferFailed();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngineMintDscFailed();
     /**
      * Type Declarations
      */
@@ -48,9 +50,13 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
     /**
      * State Variables
      */
+
+    uint256 private constant MIN_HEALTH_FACTOR = 2;
+
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
+    uint256 private constant LIQUIDATION_PRECISION = 100;
 
     mapping(address => bool) private s_allowedCollateral;
     mapping(address token => address pricefeed) private s_pricefeeds;
@@ -130,6 +136,10 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
     function mintDsc(uint256 amountOfDscToMint) external validAmount(amountOfDscToMint) nonReentrant{
         s_dscMinted[msg.sender] += amountOfDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
+        bool minted = i_dsc.mint(msg.sender, amountOfDscToMint);
+        if(!minted){
+            revert DSCEngineMintDscFailed();
+        }
     }
 
     function redeemCollateralForDsc() external {}
@@ -165,22 +175,31 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
      * @notice  Purpose :- Check health factor (Do they have enough collateral - revert if they do not
      * @param   user Address of user to check 
      */
-    function _revertIfHealthFactorIsBroken(address user) internal view returns(bool) {
-
+    function _revertIfHealthFactorIsBroken(address user) internal view {
+        uint256 userHealthFactor = _calculateHealthFactor(user);
+        if(userHealthFactor < MIN_HEALTH_FACTOR){
+            revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+        }
     }
 
     /**
      * @notice  Returns the health factor; if < 1, user can get liquidated
      * @param   user Address of user 
      */
-    function _calculateHealthFactor(address user) private view returns(uint256){
+    function _calculateHealthFactor(address user) private view returns(uint256 healthFactor){
         (uint256 totalDsc, uint256 collateralValue) = _getAccountInformation(user);
-        uint256 healthFactor = totalDsc / collateralValue;
+        uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_PRECISION) / LIQUIDATION_PRECISION;
+        healthFactor = collateralAdjustedForThreshold / totalDsc;
+        return healthFactor;
     }
     /**
      * Getter Functions
      */
     function isCollateralAllowed(address collateralTokenAddress) public view returns (bool) {
         return s_allowedCollateral[collateralTokenAddress];
+    }
+
+    function getMinHealthFactor() public pure returns(uint256){
+        return MIN_HEALTH_FACTOR;
     }
 }
