@@ -22,7 +22,7 @@ interface IDSCEngine {
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function depositCollateralAndMintDai() external;
+    function depositCollateralAndMintDsc() external;
 
     /**
      *
@@ -31,11 +31,11 @@ interface IDSCEngine {
      */
     function depositCollateral(address collateralTokenAddress, uint256 collateralAmount) external;
 
+    function mintDsc(uint256 amountOfDscToMint) external;
+
     function redeemCollateralForDsc() external;
 
     function redeemCollateral() external;
-
-    function mintDsc(uint256 amountOfDscToMint) external;
 
     function burnDsc() external;
 

@@ -33,7 +33,7 @@ import {IERC20} from "@oz/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 // @Order Imports, Interfaces, Libraries, Contracts
 
-abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
+contract DSCEngine is ReentrancyGuard, IDSCEngine {
     /**
      * Errors
      */
@@ -50,7 +50,6 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
     /**
      * State Variables
      */
-
     uint256 private constant MIN_HEALTH_FACTOR = 2;
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
@@ -128,34 +127,32 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
         emit CollateralDeposited(msg.sender, collateralTokenAddress, collateralAmount);
 
         bool success = IERC20(collateralTokenAddress).transferFrom(msg.sender, address(this), collateralAmount);
-        if(!success){
+        if (!success) {
             revert DSCEngine__TransferFailed();
         } // Approval?
     }
 
-    function mintDsc(uint256 amountOfDscToMint) external validAmount(amountOfDscToMint) nonReentrant{
+    function mintDsc(uint256 amountOfDscToMint) external validAmount(amountOfDscToMint) nonReentrant {
         s_dscMinted[msg.sender] += amountOfDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
         bool minted = i_dsc.mint(msg.sender, amountOfDscToMint);
-        if(!minted){
+        if (!minted) {
             revert DSCEngineMintDscFailed();
         }
     }
 
-    function redeemCollateralForDsc() external {}
-
-    function _getAccountInformation(address user) private view returns(
-        uint256 totalDscMinted,
-        uint256 totalCollateralValueInUsd
-    ){
+    function _getAccountInformation(address user)
+        private
+        view
+        returns (uint256 totalDscMinted, uint256 totalCollateralValueInUsd)
+    {
         totalDscMinted = s_dscMinted[user];
         totalCollateralValueInUsd = getAccountCollateralValue(user);
         return (totalDscMinted, totalCollateralValueInUsd);
     }
 
-
-    function getAccountCollateralValue(address user) public view returns(uint256 totalCollateralValueUsd){
-        for(uint256 i = 0; i < s_collateralTokens.length;i++){
+    function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueUsd) {
+        for (uint256 i = 0; i < s_collateralTokens.length; i++) {
             address collateralTokenAddress = s_collateralTokens[i];
             uint256 amountOfCollateral = s_userToCollateralDeposited[user][collateralTokenAddress];
             uint256 collateralValueUsd = getUsdValue(collateralTokenAddress, amountOfCollateral);
@@ -164,34 +161,49 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
         return totalCollateralValueUsd;
     }
 
-    function getUsdValue(address collateralTokenAddress, uint256 collateralAmount) public view returns(uint256 collateralValueInUsd){
-            AggregatorV3Interface pricefeed = AggregatorV3Interface(s_pricefeeds[collateralTokenAddress]);
-            (,int256 answer,,,) = pricefeed.latestRoundData();
-            collateralValueInUsd += ((uint256(answer) * ADDITIONAL_FEED_PRECISION) * collateralAmount) / PRECISION;
-            return collateralValueInUsd;
+    function getUsdValue(address collateralTokenAddress, uint256 collateralAmount)
+        public
+        view
+        returns (uint256 collateralValueInUsd)
+    {
+        AggregatorV3Interface pricefeed = AggregatorV3Interface(s_pricefeeds[collateralTokenAddress]);
+        (, int256 answer,,,) = pricefeed.latestRoundData();
+        collateralValueInUsd += ((uint256(answer) * ADDITIONAL_FEED_PRECISION) * collateralAmount) / PRECISION;
+        return collateralValueInUsd;
     }
 
     /**
      * @notice  Purpose :- Check health factor (Do they have enough collateral - revert if they do not
-     * @param   user Address of user to check 
+     * @param   user Address of user to check
      */
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = _calculateHealthFactor(user);
-        if(userHealthFactor < MIN_HEALTH_FACTOR){
+        if (userHealthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__BreaksHealthFactor(userHealthFactor);
         }
     }
 
     /**
      * @notice  Returns the health factor; if < 1, user can get liquidated
-     * @param   user Address of user 
+     * @param   user Address of user
      */
-    function _calculateHealthFactor(address user) private view returns(uint256 healthFactor){
+    function _calculateHealthFactor(address user) private view returns (uint256 healthFactor) {
         (uint256 totalDsc, uint256 collateralValue) = _getAccountInformation(user);
         uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_PRECISION) / LIQUIDATION_PRECISION;
         healthFactor = collateralAdjustedForThreshold / totalDsc;
         return healthFactor;
     }
+
+    function redeemCollateralForDsc() external {}
+
+    function redeemCollateral() external {}
+
+    function burnDsc() external {}
+
+    function liquidate() external {}
+
+    function getHealthFactor() external {}
+
     /**
      * Getter Functions
      */
@@ -199,7 +211,7 @@ abstract contract DSCEngine is ReentrancyGuard, IDSCEngine {
         return s_allowedCollateral[collateralTokenAddress];
     }
 
-    function getMinHealthFactor() public pure returns(uint256){
+    function getMinHealthFactor() public pure returns (uint256) {
         return MIN_HEALTH_FACTOR;
     }
 }
