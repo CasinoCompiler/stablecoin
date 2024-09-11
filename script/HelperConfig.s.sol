@@ -29,6 +29,9 @@ contract HelperConfig is Script {
     int256 public constant ETH_USD_PRICE = 2000e8;
     int256 public constant BTC_USD_PRICE = 1000e8;
 
+    address bob = makeAddr("bob");
+    address alice = makeAddr("alice");
+
     constructor() {
         if (block.chainid == 11155111) {
             activeNetworkConfig = getSepoliaConfig();
@@ -63,6 +66,13 @@ contract HelperConfig is Script {
         MockV3Aggregator mockBtcPricefeed = new MockV3Aggregator(DECIMALS, BTC_USD_PRICE);
         ERC20Mock mockEthToken = new ERC20Mock();
         ERC20Mock mockBtcToken = new ERC20Mock();
+
+        // Mint mockETH and mockBTC to accounts for testing on anvil
+        mockEthToken.mint(bob, 20);
+        mockBtcToken.mint(bob, 10);
+        mockEthToken.mint(alice, 20);
+        mockBtcToken.mint(alice, 10);
+
         vm.stopBroadcast();
 
         anvilConfig = NetworkConfig({
