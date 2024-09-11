@@ -115,10 +115,20 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     // @Order recieve, fallback, external, public, internal, private
 
-    function depositCollateralAndMintDsc() external {}
+    /**
+     * 
+     * @param collateralTokenAddress    Token address of the collateral
+     * @param collateralAmount          Amount of collateral wished to be deposited
+     * @param dscToMint                 Amount of DSC wished to be minted
+     * @notice Allows user to deposit collateral and mint dsc in one transaction.
+     */ 
+    function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint) external {
+        depositCollateral(collateralTokenAddress, collateralAmount);
+        mintDsc(dscToMint);
+    }
 
     function depositCollateral(address collateralTokenAddress, uint256 collateralAmount)
-        external
+        public
         validAmount(collateralAmount)
         allowedCollateral(collateralTokenAddress)
         nonReentrant
@@ -132,7 +142,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         } // Approval?
     }
 
-    function mintDsc(uint256 amountOfDscToMint) external validAmount(amountOfDscToMint) nonReentrant {
+    function mintDsc(uint256 amountOfDscToMint) public validAmount(amountOfDscToMint) nonReentrant {
         s_dscMinted[msg.sender] += amountOfDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
         bool minted = i_dsc.mint(msg.sender, amountOfDscToMint);

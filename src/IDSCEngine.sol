@@ -22,7 +22,7 @@ interface IDSCEngine {
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function depositCollateralAndMintDsc() external;
+    function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint) external;
 
     /**
      *
