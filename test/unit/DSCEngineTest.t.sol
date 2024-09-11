@@ -20,6 +20,7 @@ contract DSCEngineTest is Test {
     uint256 constant MINT_AMOUNT = 100;
     uint256 constant BURN_AMOUNT = 20;
     uint256 constant GAS_MONEY = 1 ether;
+    uint256 constant AMOUNT_OF_COLLATERAL = 10 ether;
 
     address[] public tokenAddresses;
     address[] public priceFeedAddresses;
@@ -122,8 +123,12 @@ contract DSCEngineTest is Test {
                            DEPOSIT COLLATERAL
     //////////////////////////////////////////////////////////////*/
 
-    function test_RevertsIfCollateralIsZero() public view {
-
+    function test_RevertsIfCollateralIsZero() public {
+        vm.startPrank(bob);
+        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        vm.expectRevert(DSCEngine.DSCEngine__MustSendCollateralGreaterThanZero.selector);
+        dscEngine.depositCollateral(tokenAddresses[0], 0);
+        vm.stopPrank();
     }
 
 }
