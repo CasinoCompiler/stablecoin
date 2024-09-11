@@ -1,5 +1,7 @@
 include .env
 
+fork:; forge test --fork-url $(SEPOLIA_RPC)
+
 push:; git push origin master
 
 mt:
