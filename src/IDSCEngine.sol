@@ -18,11 +18,16 @@ interface IDSCEngine {
         address indexed depositer, address indexed collateralTokenAddress, uint256 indexed collateralAmount
     );
 
+    event CollateralRedemeed(
+        address indexed redeemee, address indexed collateralTokenAddress, uint256 indexed amountOfCollateral
+    );
+
     /*//////////////////////////////////////////////////////////////
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint) external;
+    function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint)
+        external;
 
     /**
      *
@@ -33,11 +38,12 @@ interface IDSCEngine {
 
     function mintDsc(uint256 amountOfDscToMint) external;
 
-    function redeemCollateralForDsc() external;
+    function redeemCollateralForDsc(address collateralTokenAddress, uint256 amountOfCollateral, uint256 amountOfDsc)
+        external;
 
-    function redeemCollateral() external;
+    function redeemCollateral(address collateralTokenAddress, uint256 amountOfcollateral) external;
 
-    function burnDsc() external;
+    function burnDsc(uint256 amount) external;
 
     function liquidate() external;
 
