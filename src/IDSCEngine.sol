@@ -17,14 +17,19 @@ interface IDSCEngine {
     event CollateralDeposited(
         address indexed depositer, address indexed collateralTokenAddress, uint256 indexed collateralAmount
     );
+
     /**
      * @dev Emitted when redeemCollateral() is called.
-     * @param redeemee                  Address that redeemed collateral
-     * @param collateralTokenAddress    token addres of the collateral that was redeemed
-     * @param amountOfCollateral        amount that was was redeemed
+     * @param redeemedFrom              Address that collateral was redeemed from.
+     * @param redeemedTo                Address that collateral was redeemed to.
+     * @param collateralTokenAddress    token addres of the collateral that was redeemed.
+     * @param amountOfCollateral        amount that was was redeemed.
      */
     event CollateralRedemeed(
-        address indexed redeemee, address indexed collateralTokenAddress, uint256 indexed amountOfCollateral
+        address indexed redeemedFrom,
+        address indexed redeemedTo,
+        address indexed collateralTokenAddress,
+        uint256 amountOfCollateral
     );
 
     /*//////////////////////////////////////////////////////////////
@@ -49,19 +54,18 @@ interface IDSCEngine {
      */
     function depositCollateral(address collateralTokenAddress, uint256 collateralAmount) external;
 
-
     /**
      * @dev function to mintDSC.
      * IMPORTANT * Must make sure health factor is in tact after minting DSC.
-     * 
+     *
      * @param amountOfDscToMint Amount of dsc to be minted
      */
     function mintDsc(uint256 amountOfDscToMint) external;
 
-    function redeemCollateralForDsc(address collateralTokenAddress, uint256 amountOfCollateral, uint256 amountOfDsc)
+    function userRedeemCollateralForDsc(address collateralTokenAddress, uint256 amountOfCollateral, uint256 amountOfDsc)
         external;
 
-    function redeemCollateral(address collateralTokenAddress, uint256 amountOfcollateral) external;
+    function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfcollateral) external;
 
     function burnDsc(uint256 amount) external;
 
@@ -70,9 +74,9 @@ interface IDSCEngine {
      * @param collateralTokenAddress    Token address of the collateral
      * @param userToLiquidate           Address of user with health < min health factor
      * @param dscToCover                DSC position minted by userToLiquidate, this DSC will be covered by 3rd party
-     *                                  to redeem userToLiquidate's collateral
+     *                                  to redeem userToLiquidate's collateral.
+     * @notice  You can partially liquidate a user out of the goodness of your heart.
+     *          Fully liquidating the user will ofcourse incentivise 3rd parties to maintain system.
      */
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover) external;
-
-    function getHealthFactor() external;
 }
