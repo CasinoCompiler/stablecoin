@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 /**
  * @title   DSCEngine
  * @author  CC
- * @dev     Implementation of the {IEDSCEngine} interface.
+ * @dev     Implementation of the {IDSCEngine} interface.
  *          Function explanation wihtin interface
  *
  * The system is designed to be as minimal as possible, and have the tokens maintain a 1 token == $1 peg at all times.
@@ -69,10 +69,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     DecentralizedStableCoin private immutable i_dsc;
 
     /**
+     *
      * Constructor
-     */
-
-    /**
      *
      * @param collateralTokenAddresses  array of the collateral token addresses
      * @param collateralPricefeeds      array of Chainlink pricefeed addresses in USD
@@ -98,6 +96,10 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      * Modifiers
      */
 
+    /**
+     * @dev Modifier to ensure 0 collateral is not sent by msg.sender.
+     * @param _collateralAmount Amount of collateral, matches keyword arg from msg.sender.  
+     */
     modifier validAmount(uint256 _collateralAmount) {
         if (_collateralAmount == 0) {
             revert DSCEngine__MustSendCollateralGreaterThanZero();
@@ -105,6 +107,10 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _;
     }
 
+    /**
+     * @dev Modifier to ensure the collateral being sent is of allowed type.
+     * @param _collateralTokenAddress Token address of collateral address, matches keyword arg from msg.sender.  
+     */
     modifier allowedCollateral(address _collateralTokenAddress) {
         if (s_pricefeeds[_collateralTokenAddress] == address(0)) {
             revert DSCEngine__CollateralTypeNotAllowed();
@@ -116,13 +122,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     // @Order recieve, fallback, external, public, internal, private
 
-    /**
-     *
-     * @param collateralTokenAddress    Token address of the collateral
-     * @param collateralAmount          Amount of collateral wished to be deposited
-     * @param dscToMint                 Amount of DSC wished to be minted
-     * @notice Allows user to deposit collateral and mint dsc in one transaction.
-     */
     function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint)
         external
     {
@@ -142,7 +141,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         bool success = IERC20(collateralTokenAddress).transferFrom(msg.sender, address(this), collateralAmount);
         if (!success) {
             revert DSCEngine__TransferFailed();
-        } // Approval?
+        }
     }
 
     function mintDsc(uint256 amountOfDscToMint) public validAmount(amountOfDscToMint) nonReentrant {
@@ -241,7 +240,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         // _revertIfHealthFactorIsBroken(msg.sender); <= redundent check
     }
 
-    function liquidate() external {}
+    function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover) external {}
 
     function getHealthFactor() external {}
 
