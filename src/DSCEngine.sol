@@ -51,6 +51,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__MintDscFailed();
     error DSCEngine__InsufficientDSCAmountToBurn();
     error DSCEngine__HealthFactorIsAboveThreshold(uint256 healthFactor);
+    error DSCEngin__HealthFactorNotImproved();
 
     /**
      * State Variables
@@ -163,24 +164,15 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         external
     {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
-        burnDsc(amountOfDsc);
+        _burnDSC(amountOfDsc, msg.sender, msg.sender);
     }
 
     function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfCollateral) public {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
     }
 
-    function burnDsc(uint256 amount) public {
-        if (amount > s_dscMinted[msg.sender]) {
-            revert DSCEngine__InsufficientDSCAmountToBurn();
-        }
-        s_dscMinted[msg.sender] -= amount;
-        bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
-        i_dsc.burn(amount);
-        // _revertIfHealthFactorIsBroken(msg.sender); <= redundent check
+    function userBurnDsc(uint256 amount) public {
+
     }
 
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
@@ -188,15 +180,22 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         validAmount(dscToCover)
         nonReentrant
     {
-        uint256 healthFactor = getHealthFactor(userToLiquidate);
-        if (healthFactor >= MIN_HEALTH_FACTOR) {
-            revert DSCEngine__HealthFactorIsAboveThreshold(healthFactor);
+        uint256 startingHealthFactor = getHealthFactor(userToLiquidate);
+        if (startingHealthFactor >= MIN_HEALTH_FACTOR) {
+            revert DSCEngine__HealthFactorIsAboveThreshold(startingHealthFactor);
         }
 
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, dscToCover);
         uint256 bonus = (tokenAmountFromDebtCovered * LIQUIDATOR_BONUS) / LIQUIDATOR_PRECISION;
         uint256 total = tokenAmountFromDebtCovered + bonus;
         _redeemCollateral(collateralTokenAddress, total, userToLiquidate, msg.sender);
+        _burnDSC(dscToCover, msg.sender, userToLiquidate);
+
+        uint256 endingHealthFactor = getHealthFactor(userToLiquidate);
+        if (endingHealthFactor < startingHealthFactor){
+            revert DSCEngin__HealthFactorNotImproved();
+        }
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     /**
@@ -224,12 +223,22 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _revertIfHealthFactorIsBroken(_from);
     }
 
-    function _burn(uint256 _amount, address _from, address _to) private validAmount(_amount) {}
+    function _burnDSC(uint256 _amount, address _dscDebtPayee, address _debtor) private validAmount(_amount) {
+        if (_amount > s_dscMinted[_debtor]) {
+            revert DSCEngine__InsufficientDSCAmountToBurn();
+        }
+        s_dscMinted[_debtor] -= _amount;
+        bool success = i_dsc.transferFrom(_dscDebtPayee, address(this), _amount);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+        i_dsc.burn(_amount);
+        // _revertIfHealthFactorIsBroken(msg.sender); <= redundent check
+    }
 
     /**
      * Getter Functions
      */
-
     function isCollateralAllowed(address collateralTokenAddress) public view returns (bool) {
         return s_allowedCollateral[collateralTokenAddress];
     }
@@ -237,7 +246,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     function getMinHealthFactor() public pure returns (uint256) {
         return MIN_HEALTH_FACTOR;
     }
-
 
     /**
      * @notice  Returns the health factor; if < 1, user can get liquidated
