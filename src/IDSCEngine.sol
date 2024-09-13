@@ -67,8 +67,6 @@ interface IDSCEngine {
 
     function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfcollateral) external;
 
-    function userBurnDsc(uint256 amount) external;
-
     /**
      *
      * @param collateralTokenAddress    Token address of the collateral

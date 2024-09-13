@@ -49,7 +49,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintDscFailed();
-    error DSCEngine__InsufficientDSCAmountToBurn();
+    error DSCEngine__BurnAmountGreaterThanMinted();
     error DSCEngine__HealthFactorIsAboveThreshold(uint256 healthFactor);
     error DSCEngin__HealthFactorNotImproved();
 
@@ -171,8 +171,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
     }
 
-    function userBurnDsc(uint256 amount) public {}
-
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
         external
         validAmount(dscToCover)
@@ -223,7 +221,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
     function _burnDSC(uint256 _amount, address _dscDebtPayee, address _debtor) private validAmount(_amount) {
         if (_amount > s_dscMinted[_debtor]) {
-            revert DSCEngine__InsufficientDSCAmountToBurn();
+            revert DSCEngine__BurnAmountGreaterThanMinted();
         }
         s_dscMinted[_debtor] -= _amount;
         bool success = i_dsc.transferFrom(_dscDebtPayee, address(this), _amount);
