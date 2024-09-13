@@ -20,7 +20,7 @@ contract DSCEngineTest is Test {
     uint256 constant MINT_AMOUNT = 100;
     uint256 constant BURN_AMOUNT = 20;
     uint256 constant GAS_MONEY = 1 ether;
-    uint256 constant AMOUNT_OF_COLLATERAL = 10 ether;
+    uint256 constant AMOUNT_OF_COLLATERAL = 5;
 
     address[] public tokenAddresses;
     address[] public priceFeedAddresses;
@@ -164,11 +164,51 @@ contract DSCEngineTest is Test {
                            DEPOSIT COLLATERAL
     //////////////////////////////////////////////////////////////*/
 
+    event CollateralDeposited(
+        address indexed depositer, address indexed collateralTokenAddress, uint256 indexed collateralAmount
+    );
+
+    modifier bobDepositCollateral(){
+        vm.startPrank(bob);
+        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        vm.stopPrank();
+        _;
+    }
+
     function test_RevertsIfCollateralIsZero() public {
         vm.startPrank(bob);
         ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         vm.expectRevert(DSCEngine.DSCEngine__MustSendCollateralGreaterThanZero.selector);
         dscEngine.depositCollateral(tokenAddresses[0], 0);
         vm.stopPrank();
+    }
+
+    function test_RevertsOnUnapprovedCollateral() public {
+        vm.prank(bob);
+        vm.expectRevert(DSCEngine.DSCEngine__CollateralTypeNotAllowed.selector);
+        dscEngine.depositCollateral(address(0), 100);
+    }
+
+    function test_CanDepositCollateralAndEmitEvent() public {
+        vm.startPrank(bob);
+        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        vm.expectEmit(true,true,true,false,address(dscEngine));
+        emit CollateralDeposited(bob, tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        vm.stopPrank();
+    }
+
+    function test_DepositCollateralUpdatesInformationAsExpected() public bobDepositCollateral{
+        uint256 expectedDscMinted = 0;
+        uint256 totalDscMinted;
+        uint256 expectedCollateralValueInUsd = (dscEngine.getUsdValue(tokenAddresses[0], AMOUNT_OF_COLLATERAL));
+        uint256 collateralValueInUsd;
+        vm.prank(bob);
+        (totalDscMinted, collateralValueInUsd) = dscEngine.getAccountInformation(bob);
+
+        assertEq(totalDscMinted, expectedDscMinted);
+        assertEq(collateralValueInUsd, expectedCollateralValueInUsd);
+
     }
 }
