@@ -266,6 +266,14 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         return (totalDscMinted, totalCollateralValueInUsd);
     }
 
+    function getAccountCollateralDeposited(address user, address collateralTokenAddress)
+        public
+        view
+        returns (uint256 collateralDeposited)
+    {
+        return s_userToCollateralDeposited[user][collateralTokenAddress];
+    }
+
     function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueUsd) {
         for (uint256 i = 0; i < s_collateralTokens.length; i++) {
             address collateralTokenAddress = s_collateralTokens[i];

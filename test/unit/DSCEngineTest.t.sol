@@ -168,7 +168,7 @@ contract DSCEngineTest is Test {
         address indexed depositer, address indexed collateralTokenAddress, uint256 indexed collateralAmount
     );
 
-    modifier bobDepositCollateral(){
+    modifier bobDepositCollateral() {
         vm.startPrank(bob);
         ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
@@ -193,22 +193,25 @@ contract DSCEngineTest is Test {
     function test_CanDepositCollateralAndEmitEvent() public {
         vm.startPrank(bob);
         ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
-        vm.expectEmit(true,true,true,false,address(dscEngine));
+        vm.expectEmit(true, true, true, false, address(dscEngine));
         emit CollateralDeposited(bob, tokenAddresses[0], AMOUNT_OF_COLLATERAL);
         dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
         vm.stopPrank();
     }
 
-    function test_DepositCollateralUpdatesInformationAsExpected() public bobDepositCollateral{
+    function test_DepositCollateralUpdatesInformationAsExpected() public bobDepositCollateral {
         uint256 expectedDscMinted = 0;
         uint256 totalDscMinted;
         uint256 expectedCollateralValueInUsd = (dscEngine.getUsdValue(tokenAddresses[0], AMOUNT_OF_COLLATERAL));
         uint256 collateralValueInUsd;
+        uint256 expectedAmountOfCollateral = AMOUNT_OF_COLLATERAL;
+        uint256 amountOfCollateral = dscEngine.getAccountCollateralDeposited(bob, tokenAddresses[0]);
+
         vm.prank(bob);
         (totalDscMinted, collateralValueInUsd) = dscEngine.getAccountInformation(bob);
 
         assertEq(totalDscMinted, expectedDscMinted);
+        assertEq(expectedAmountOfCollateral, amountOfCollateral);
         assertEq(collateralValueInUsd, expectedCollateralValueInUsd);
-
     }
 }
