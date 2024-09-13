@@ -171,9 +171,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
     }
 
-    function userBurnDsc(uint256 amount) public {
-
-    }
+    function userBurnDsc(uint256 amount) public {}
 
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
         external
@@ -192,7 +190,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _burnDSC(dscToCover, msg.sender, userToLiquidate);
 
         uint256 endingHealthFactor = getHealthFactor(userToLiquidate);
-        if (endingHealthFactor < startingHealthFactor){
+        if (endingHealthFactor < startingHealthFactor) {
             revert DSCEngin__HealthFactorNotImproved();
         }
         _revertIfHealthFactorIsBroken(msg.sender);

@@ -42,16 +42,18 @@ contract HelperConfig is Script {
     }
 
     function getSepoliaConfig() public view returns (NetworkConfig memory, bool) {
-        return (NetworkConfig({
-            weth: Token({
-                tokenAddress: 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9,
-                pricefeedAddress: 0x694AA1769357215DE4FAC081bf1f309aDC325306
-            }),
-            wbtc: Token({
-                tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
-                pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
+        return (
+            NetworkConfig({
+                weth: Token({
+                    tokenAddress: 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9,
+                    pricefeedAddress: 0x694AA1769357215DE4FAC081bf1f309aDC325306
+                }),
+                wbtc: Token({
+                    tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
+                    pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
                 })
-            }), is_anvil
+            }),
+            is_anvil
         );
     }
 

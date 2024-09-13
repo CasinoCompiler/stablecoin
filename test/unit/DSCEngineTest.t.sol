@@ -46,9 +46,9 @@ contract DSCEngineTest is Test {
 
         assertEq(address(dscEngine), dsc.getOwner());
     }
-    
+
     function test_MockEthAndMockBtcMintedToAddress() public view {
-        if(!config.is_anvil()){
+        if (!config.is_anvil()) {
             return;
         }
         //Eth
@@ -60,7 +60,7 @@ contract DSCEngineTest is Test {
     address[] t_collateralTokenAddresses;
     address[] t_collateralPricefeeds;
 
-    function test__DoesNotInitIfPricefeedDataNotCollecedtedCorrectly() public {
+    function test_DoesNotInitIfPricefeedDataNotCollecedtedCorrectly() public {
         t_collateralTokenAddresses.push(weth.tokenAddress);
         t_collateralTokenAddresses.push(wbtc.tokenAddress);
         t_collateralPricefeeds.push(weth.pricefeedAddress);
@@ -82,7 +82,7 @@ contract DSCEngineTest is Test {
         _;
     }
 
-    function test__invalidMintAmountReverts() public {
+    function test_invalidMintAmountReverts() public {
         vm.prank(address(dscEngine));
         vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__MustMintMoreThanZero.selector);
         dsc.mint(bob, 0);
@@ -145,9 +145,7 @@ contract DSCEngineTest is Test {
         assertEq(expectedValue, actualValue);
     }
 
-    function test__GetTokenAmountFromUsd() public{
-
-    }
+    function test_GetTokenAmountFromUsd() public {}
 
     /*//////////////////////////////////////////////////////////////
                            DEPOSIT COLLATERAL
