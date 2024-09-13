@@ -145,7 +145,20 @@ contract DSCEngineTest is Test {
         assertEq(expectedValue, actualValue);
     }
 
-    function test_GetTokenAmountFromUsd() public {}
+    function test_GetTokenAmountFromUsd() public view {
+        uint256 usdAmount = 100e18;
+        uint256 expectedWeth;
+        uint256 actualWeth;
+        if (config.is_anvil()) {
+            expectedWeth = 0.05e18;
+        } else {
+            expectedWeth = (((uint256((usdAmount * 1e8) / (dscEngine.getLatestRoundDataValue(tokenAddresses[0]))))));
+        }
+
+        actualWeth = uint256(dscEngine.getTokenAmountFromUsd(weth.tokenAddress, usdAmount));
+
+        assertEq(expectedWeth, actualWeth);
+    }
 
     /*//////////////////////////////////////////////////////////////
                            DEPOSIT COLLATERAL
