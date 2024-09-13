@@ -28,6 +28,13 @@ contract DSCEngineTest is Test {
     HelperConfig.Token weth;
     HelperConfig.Token wbtc;
 
+    modifier isNotAnvil() {
+        if (!config.is_anvil()) {
+            return;
+        }
+        _;
+    }
+
     function setUp() public {
         deployDSC = new DeployDSC();
         (dsc, dscEngine, config) = deployDSC.run();
@@ -47,10 +54,7 @@ contract DSCEngineTest is Test {
         assertEq(address(dscEngine), dsc.getOwner());
     }
 
-    function test_MockEthAndMockBtcMintedToAddress() public view {
-        if (!config.is_anvil()) {
-            return;
-        }
+    function test_MockEthAndMockBtcMintedToAddress() public view isNotAnvil {
         //Eth
         assert(ERC20Mock(tokenAddresses[0]).balanceOf(bob) == 20);
         //btc
@@ -190,7 +194,7 @@ contract DSCEngineTest is Test {
         dscEngine.depositCollateral(address(0), 100);
     }
 
-    function test_CanDepositCollateralAndEmitEvent() public {
+    function test_CanDepositCollateralAndEmitEvent() public isNotAnvil {
         vm.startPrank(bob);
         ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         vm.expectEmit(true, true, true, false, address(dscEngine));
@@ -199,7 +203,7 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_DepositCollateralUpdatesInformationAsExpected() public bobDepositCollateral {
+    function test_DepositCollateralUpdatesInformationAsExpected() public isNotAnvil bobDepositCollateral {
         uint256 expectedDscMinted = 0;
         uint256 totalDscMinted;
         uint256 expectedCollateralValueInUsd = (dscEngine.getUsdValue(tokenAddresses[0], AMOUNT_OF_COLLATERAL));
