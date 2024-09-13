@@ -51,7 +51,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__MintDscFailed();
     error DSCEngine__BurnAmountGreaterThanDebtorMinted();
     error DSCEngine__HealthFactorIsAboveThreshold(uint256 healthFactor);
-    error DSCEngin__HealthFactorNotImproved();
+    error DSCEngine__HealthFactorNotImproved();
+    error DSCEngine__UserNotInSystemAlready();
 
     /**
      * State Variables
@@ -70,6 +71,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     mapping(address user => mapping(address collateral => uint256 amountOfCollateral)) private
         s_userToCollateralDeposited;
     mapping(address user => uint256 amountOfDscToMint) private s_dscMinted;
+    mapping(address user => bool inSystem) private s_userInSystem;
 
     address[] private s_collateralTokens;
 
@@ -124,6 +126,17 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         }
         _;
     }
+
+    /**
+     * @dev Modifier to ensure the user already has a health factor and is in the system i.e. has some DSC minted therefore not dividing by zero.
+     * @param _user Token address of collateral address, matches keyword arg from msg.sender.
+     */
+    modifier alreadyInSystem(address _user) {
+        if (!isUserInSystem(_user)){
+            revert DSCEngine__UserNotInSystemAlready();
+        }
+        _;
+    }
     /**
      * Functions
      */
@@ -131,6 +144,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
     function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint)
         public
+        alreadyInSystem(msg.sender)
     {
         depositCollateral(collateralTokenAddress, collateralAmount);
         mintDsc(dscToMint);
@@ -140,6 +154,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         public
         validAmount(collateralAmount)
         allowedCollateral(collateralTokenAddress)
+        alreadyInSystem(msg.sender)
         nonReentrant
     {
         s_userToCollateralDeposited[msg.sender][collateralTokenAddress] += collateralAmount;
@@ -189,7 +204,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
         uint256 endingHealthFactor = getHealthFactor(userToLiquidate);
         if (endingHealthFactor < startingHealthFactor) {
-            revert DSCEngin__HealthFactorNotImproved();
+            revert DSCEngine__HealthFactorNotImproved();
         }
         _revertIfHealthFactorIsBroken(msg.sender);
     }
@@ -241,6 +256,10 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
     function getMinHealthFactor() public pure returns (uint256) {
         return MIN_HEALTH_FACTOR;
+    }
+
+    function isUserInSystem(address user) public view returns(bool){
+        return s_userInSystem[user];
     }
 
     /**

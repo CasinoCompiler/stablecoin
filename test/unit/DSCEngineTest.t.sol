@@ -222,6 +222,11 @@ contract DSCEngineTest is Test {
         assertEq(collateralValueInUsd, expectedCollateralValueInUsd);
     }
 
+    function test_DepositingCollateralGivesHealthFactor() public bobDepositCollateral{
+        uint256 bobHealthFactor = dscEngine.getHealthFactor(bob);
+        console.log("Bob health factor: %i", bobHealthFactor);
+    }
+
     // function test_RevertIfCollateralTransferFailed() public isNotAnvil {
     //     // Transfer would fail if not approval?
     //     vm.startPrank(bob);
