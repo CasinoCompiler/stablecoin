@@ -49,7 +49,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintDscFailed();
-    error DSCEngine__BurnAmountGreaterThanMinted();
+    error DSCEngine__BurnAmountGreaterThanDebtorMinted();
     error DSCEngine__HealthFactorIsAboveThreshold(uint256 healthFactor);
     error DSCEngin__HealthFactorNotImproved();
 
@@ -221,7 +221,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
     function _burnDSC(uint256 _amount, address _dscDebtPayee, address _debtor) private validAmount(_amount) {
         if (_amount > s_dscMinted[_debtor]) {
-            revert DSCEngine__BurnAmountGreaterThanMinted();
+            revert DSCEngine__BurnAmountGreaterThanDebtorMinted();
         }
         s_dscMinted[_debtor] -= _amount;
         bool success = i_dsc.transferFrom(_dscDebtPayee, address(this), _amount);
@@ -249,7 +249,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     function getHealthFactor(address user) public view returns (uint256 healthFactor) {
         (uint256 totalDsc, uint256 collateralValue) = getAccountInformation(user);
-        uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_PRECISION) / LIQUIDATION_PRECISION;
+        uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         healthFactor = collateralAdjustedForThreshold / totalDsc;
         return healthFactor;
     }

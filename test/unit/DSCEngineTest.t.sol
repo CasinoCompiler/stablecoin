@@ -7,12 +7,14 @@ import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@oz/contracts/mocks/token/ERC20Mock.sol";
+import {MockFailingTransferERC20} from "../../src/MockFailingTransferERC20.sol";
 
 contract DSCEngineTest is Test {
     DeployDSC deployDSC;
     DSCEngine dscEngine;
     DecentralizedStableCoin dsc;
     HelperConfig config;
+    MockFailingTransferERC20 failingErc20;
 
     address bob = makeAddr("bob");
     address alice = makeAddr("alice");
@@ -27,6 +29,7 @@ contract DSCEngineTest is Test {
 
     HelperConfig.Token weth;
     HelperConfig.Token wbtc;
+    HelperConfig.Token wfail;
 
     modifier isNotAnvil() {
         if (!config.is_anvil()) {
@@ -37,11 +40,11 @@ contract DSCEngineTest is Test {
 
     function setUp() public {
         deployDSC = new DeployDSC();
-        (dsc, dscEngine, config) = deployDSC.run();
-        (weth, wbtc) = config.activeNetworkConfig();
+        (dsc, dscEngine, failingErc20, config) = deployDSC.run();
+        (weth, wbtc, wfail) = config.activeNetworkConfig();
 
-        tokenAddresses = [weth.tokenAddress, wbtc.tokenAddress];
-        priceFeedAddresses = [weth.pricefeedAddress, wbtc.pricefeedAddress];
+        tokenAddresses = [weth.tokenAddress, wbtc.tokenAddress, wfail.tokenAddress];
+        priceFeedAddresses = [weth.pricefeedAddress, wbtc.pricefeedAddress, wfail.pricefeedAddress];
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -218,4 +221,34 @@ contract DSCEngineTest is Test {
         assertEq(expectedAmountOfCollateral, amountOfCollateral);
         assertEq(collateralValueInUsd, expectedCollateralValueInUsd);
     }
+
+    // function test_RevertIfCollateralTransferFailed() public isNotAnvil {
+    //     // Transfer would fail if not approval?
+    //     vm.startPrank(bob);
+    //     MockFailingTransferERC20(tokenAddresses[2]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+    //     vm.expectRevert(DSCEngine.DSCEngine__TransferFailed.selector);
+    //     dscEngine.depositCollateral(tokenAddresses[2], AMOUNT_OF_COLLATERAL);
+    //     vm.stopPrank();
+    // }
+
+    /*//////////////////////////////////////////////////////////////
+                                MINTDSC
+    //////////////////////////////////////////////////////////////*/
+
+    function test_MintDscFailsOnBrokenHealthFactor() public isNotAnvil bobDepositCollateral{
+
+    }
+
+    function test_MintDscExecutes() public isNotAnvil bobDepositCollateral{
+
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           REDEEM COLLATERAL
+    //////////////////////////////////////////////////////////////*/
+
+    /*//////////////////////////////////////////////////////////////
+                               LIQUIDATE
+    //////////////////////////////////////////////////////////////*/
+
 }

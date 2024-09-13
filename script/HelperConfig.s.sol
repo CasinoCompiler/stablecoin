@@ -6,6 +6,7 @@ import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../src/DSCEngine.sol";
 import {MockV3Aggregator} from "../test/mocks/MockAggregatorV3Interface.sol";
 import {ERC20Mock} from "@oz/contracts/mocks/token/ERC20Mock.sol";
+import {MockFailingTransferERC20} from "../src/MockFailingTransferERC20.sol";
 
 // 1. Deploy mocks when we are on a local anvil network
 // 2. Keep track of contract addresses across different chains
@@ -19,6 +20,7 @@ contract HelperConfig is Script {
     struct NetworkConfig {
         Token weth;
         Token wbtc;
+        Token wfail;
     }
 
     struct Token {
@@ -29,6 +31,7 @@ contract HelperConfig is Script {
     uint8 public constant DECIMALS = 8;
     int256 public constant ETH_USD_PRICE = 2000e8;
     int256 public constant BTC_USD_PRICE = 1000e8;
+    int256 public constant FAILING_USD_PRICE = 1e8;
 
     address bob = makeAddr("bob");
     address alice = makeAddr("alice");
@@ -51,9 +54,13 @@ contract HelperConfig is Script {
                 wbtc: Token({
                     tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
                     pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
+                }), 
+                // **IMPORTANT** token address and pricefeedaddress just duplicate of wbtc. wfail isn't a real deployed token. 
+                wfail: Token({
+                    tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
+                    pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
                 })
-            }),
-            is_anvil
+            }), is_anvil
         );
     }
 
@@ -69,8 +76,10 @@ contract HelperConfig is Script {
         vm.startBroadcast();
         MockV3Aggregator mockEthPricefeed = new MockV3Aggregator(DECIMALS, ETH_USD_PRICE);
         MockV3Aggregator mockBtcPricefeed = new MockV3Aggregator(DECIMALS, BTC_USD_PRICE);
+        MockV3Aggregator mockFailingPricefeed = new MockV3Aggregator(DECIMALS, FAILING_USD_PRICE);
         ERC20Mock mockEthToken = new ERC20Mock();
         ERC20Mock mockBtcToken = new ERC20Mock();
+        MockFailingTransferERC20 mockFailingToken = new MockFailingTransferERC20();
 
         // Mint mockETH and mockBTC to accounts for testing on anvil
         mockEthToken.mint(bob, 20);
@@ -78,11 +87,15 @@ contract HelperConfig is Script {
         mockEthToken.mint(alice, 20);
         mockBtcToken.mint(alice, 10);
 
+        //Mint failing to bob
+        mockFailingToken.mint(bob, 10);
+
         vm.stopBroadcast();
 
         anvilConfig = NetworkConfig({
             weth: Token({tokenAddress: address(mockEthToken), pricefeedAddress: address(mockEthPricefeed)}),
-            wbtc: Token({tokenAddress: address(mockBtcToken), pricefeedAddress: address(mockBtcPricefeed)})
+            wbtc: Token({tokenAddress: address(mockBtcToken), pricefeedAddress: address(mockBtcPricefeed)}),
+            wfail:Token({tokenAddress: address(mockFailingToken), pricefeedAddress: address(mockFailingPricefeed)})
         });
 
         return (anvilConfig, is_anvil);
