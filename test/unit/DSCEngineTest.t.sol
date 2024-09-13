@@ -25,10 +25,13 @@ contract DSCEngineTest is Test {
     address[] public tokenAddresses;
     address[] public priceFeedAddresses;
 
+    HelperConfig.Token weth;
+    HelperConfig.Token wbtc;
+
     function setUp() public {
         deployDSC = new DeployDSC();
         (dsc, dscEngine, config) = deployDSC.run();
-        (HelperConfig.Token memory weth, HelperConfig.Token memory wbtc) = config.activeNetworkConfig();
+        (weth, wbtc) = config.activeNetworkConfig();
 
         tokenAddresses = [weth.tokenAddress, wbtc.tokenAddress];
         priceFeedAddresses = [weth.pricefeedAddress, wbtc.pricefeedAddress];
@@ -43,12 +46,27 @@ contract DSCEngineTest is Test {
 
         assertEq(address(dscEngine), dsc.getOwner());
     }
-
+    
     function test_MockEthAndMockBtcMintedToAddress() public view {
+        if(!config.is_anvil()){
+            return;
+        }
         //Eth
         assert(ERC20Mock(tokenAddresses[0]).balanceOf(bob) == 20);
         //btc
         assert(ERC20Mock(tokenAddresses[1]).balanceOf(bob) == 10);
+    }
+
+    address[] t_collateralTokenAddresses;
+    address[] t_collateralPricefeeds;
+
+    function test__DoesNotInitIfPricefeedDataNotCollecedtedCorrectly() public {
+        t_collateralTokenAddresses.push(weth.tokenAddress);
+        t_collateralTokenAddresses.push(wbtc.tokenAddress);
+        t_collateralPricefeeds.push(weth.pricefeedAddress);
+
+        vm.expectRevert(DSCEngine.DSCEngine__PricefeedCollectionError.selector);
+        new DSCEngine(t_collateralTokenAddresses, t_collateralPricefeeds, address(dsc));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -125,6 +143,10 @@ contract DSCEngineTest is Test {
         uint256 actualValue = dscEngine.getUsdValue(tokenAddresses[0], ethAmount);
 
         assertEq(expectedValue, actualValue);
+    }
+
+    function test__GetTokenAmountFromUsd() public{
+
     }
 
     /*//////////////////////////////////////////////////////////////

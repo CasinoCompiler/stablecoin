@@ -14,6 +14,7 @@ import {ERC20Mock} from "@oz/contracts/mocks/token/ERC20Mock.sol";
 // Otherwise, grab existing address fom the live network
 contract HelperConfig is Script {
     NetworkConfig public activeNetworkConfig;
+    bool public is_anvil;
 
     struct NetworkConfig {
         Token weth;
@@ -34,14 +35,14 @@ contract HelperConfig is Script {
 
     constructor() {
         if (block.chainid == 11155111) {
-            activeNetworkConfig = getSepoliaConfig();
+            (activeNetworkConfig, is_anvil) = getSepoliaConfig();
         } else {
-            activeNetworkConfig = getOrCreateAnvilConfig();
+            (activeNetworkConfig, is_anvil) = getOrCreateAnvilConfig();
         }
     }
 
-    function getSepoliaConfig() public pure returns (NetworkConfig memory) {
-        return NetworkConfig({
+    function getSepoliaConfig() public view returns (NetworkConfig memory, bool) {
+        return (NetworkConfig({
             weth: Token({
                 tokenAddress: 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9,
                 pricefeedAddress: 0x694AA1769357215DE4FAC081bf1f309aDC325306
@@ -49,16 +50,18 @@ contract HelperConfig is Script {
             wbtc: Token({
                 tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
                 pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
-            })
-        });
+                })
+            }), is_anvil
+        );
     }
 
-    function getOrCreateAnvilConfig() public returns (NetworkConfig memory) {
+    function getOrCreateAnvilConfig() public returns (NetworkConfig memory, bool) {
         NetworkConfig memory anvilConfig;
+        is_anvil = true;
 
         // Ensure an anvil mock address hasn't already been deployed. if it has, return existing config.
         if (activeNetworkConfig.weth.pricefeedAddress != address(0)) {
-            return anvilConfig;
+            return (anvilConfig, is_anvil);
         }
 
         vm.startBroadcast();
@@ -80,6 +83,6 @@ contract HelperConfig is Script {
             wbtc: Token({tokenAddress: address(mockBtcToken), pricefeedAddress: address(mockBtcPricefeed)})
         });
 
-        return anvilConfig;
+        return (anvilConfig, is_anvil);
     }
 }
