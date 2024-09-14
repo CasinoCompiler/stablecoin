@@ -369,10 +369,10 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_DSCEngine__InsufficientDscDebt() public isNotAnvil bobEnterSystem {
+    function test_DSCEngine__BurnAmountGreaterThanDebtorMinted() public isNotAnvil bobEnterSystem {
         vm.startPrank(bob);
         ERC20(address(dsc)).approve(address(dscEngine), BROKEN_REDEEM_DSC_AMOUNT);
-        vm.expectRevert(DSCEngine.DSCEngine__InsufficientDscDebt.selector);
+        vm.expectRevert(DSCEngine.DSCEngine__BurnAmountGreaterThanDebtorMinted.selector);
         dscEngine.userRedeemCollateralForDsc(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT, BROKEN_REDEEM_DSC_AMOUNT);
         vm.stopPrank();
     }
