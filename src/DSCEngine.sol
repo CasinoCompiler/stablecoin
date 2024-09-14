@@ -198,7 +198,23 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
     }
 
-    // Function userBurnDSC(uint256 amountToBurn) public {} ?? Redundant => user should interact with IERC(DSC).burn()
+    function userExitSystem(uint256 dscTotalDebt) public alreadyInSystem(msg.sender){
+        // Check health factor is okay
+        // Yes? withdraw all collateral and burn dsc
+        // No? revert DSCEngine__UserNotHealthy()
+        // set userInSystem to false
+
+        _revertIfHealthFactorIsBroken(msg.sender);
+        for (uint256 i = 0; i < s_collateralTokens.length;i++){
+            address collateralTokenAddress = s_collateralTokens[i];
+            uint256 amountOfCollateral = s_userToCollateralDeposited[msg.sender][collateralTokenAddress];
+            bool success = IERC20(collateralTokenAddress).transfer(msg.sender, amountOfCollateral);
+            if (!success) {
+                revert DSCEngine__TransferFailed();
+            }
+        }
+        _burnDSC(dscTotalDebt, msg.sender, msg.sender);
+    }
 
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
         external
@@ -258,7 +274,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
             revert DSCEngine__TransferFailed();
         }
         i_dsc.burn(_amount);
-        // _revertIfHealthFactorIsBroken(msg.sender); <= redundent check
     }
 
     /**
