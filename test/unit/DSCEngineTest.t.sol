@@ -23,10 +23,8 @@ contract DSCEngineTest is Test {
     uint256 constant BURN_AMOUNT = 20;
     uint256 constant GAS_MONEY = 1 ether;
     uint256 constant AMOUNT_OF_COLLATERAL = 1 ether;
+    uint256 constant SECOND_AMOUNT_OF_COLLATERAL = 1 ether;
     uint256 constant BROKEN_AMOUNT_OF_COLLATERAL = 0.09 ether;
-
-    address[] public tokenAddresses;
-    address[] public priceFeedAddresses;
 
     HelperConfig.Token weth;
     HelperConfig.Token wbtc;
@@ -43,9 +41,6 @@ contract DSCEngineTest is Test {
         deployDSC = new DeployDSC();
         (dsc, dscEngine, failingErc20, config) = deployDSC.run();
         (weth, wbtc, wfail) = config.activeNetworkConfig();
-
-        tokenAddresses = [weth.tokenAddress, wbtc.tokenAddress, wfail.tokenAddress];
-        priceFeedAddresses = [weth.pricefeedAddress, wbtc.pricefeedAddress, wfail.pricefeedAddress];
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -60,9 +55,9 @@ contract DSCEngineTest is Test {
 
     function test_MockEthAndMockBtcMintedToAddress() public view isNotAnvil {
         //Eth
-        assert(ERC20Mock(tokenAddresses[0]).balanceOf(bob) == 20);
+        assert(ERC20Mock(weth.tokenAddress).balanceOf(bob) == 20e18);
         //btc
-        assert(ERC20Mock(tokenAddresses[1]).balanceOf(bob) == 10);
+        assert(ERC20Mock(wbtc.tokenAddress).balanceOf(bob) == 10e18);
     }
 
     address[] t_collateralTokenAddresses;
@@ -135,7 +130,9 @@ contract DSCEngineTest is Test {
         assert(dsc.balanceOf(address(dscEngine)) == 80);
     }
 
-    // Will implement later
+    /**
+     * @dev will implement later.
+     */
     function test_CanRecoverERC() public {}
 
     /*//////////////////////////////////////////////////////////////
@@ -146,21 +143,21 @@ contract DSCEngineTest is Test {
         uint256 ethAmount = 10e18;
         // 10e18 * $2000 == 20000e18
         uint256 expectedValue =
-            (((uint256(dscEngine.getLatestRoundDataValue(tokenAddresses[0])) * 1e10) * ethAmount)) / 1e18;
+            (((uint256(dscEngine.getLatestRoundDataValue(weth.tokenAddress)) * 1e10) * ethAmount)) / 1e18;
 
-        uint256 actualValue = dscEngine.getUsdValue(tokenAddresses[0], ethAmount);
+        uint256 actualValue = dscEngine.getUsdValue(weth.tokenAddress, ethAmount);
 
         assertEq(expectedValue, actualValue);
     }
 
     function test_GetTokenAmountFromUsd() public view {
-        uint256 usdAmount = 100e18;
+        uint256 usdAmount = MINT_AMOUNT;
         uint256 expectedWeth;
         uint256 actualWeth;
         if (config.is_anvil()) {
             expectedWeth = 0.05e18;
         } else {
-            expectedWeth = (((uint256((usdAmount * 1e8) / (dscEngine.getLatestRoundDataValue(tokenAddresses[0]))))));
+            expectedWeth = (((uint256((usdAmount * 1e8) / (dscEngine.getLatestRoundDataValue(weth.tokenAddress))))));
         }
 
         actualWeth = uint256(dscEngine.getTokenAmountFromUsd(weth.tokenAddress, usdAmount));
@@ -176,19 +173,35 @@ contract DSCEngineTest is Test {
         address indexed depositer, address indexed collateralTokenAddress, uint256 indexed collateralAmount
     );
 
-    modifier bobDepositCollateral() {
+    modifier bobEnterSystem() {
         vm.startPrank(bob);
-        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
-        dscEngine.depositCollateralAndMintDsc(tokenAddresses[0], AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateralAndMintDsc(weth.tokenAddress, AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
+        vm.stopPrank();
+        _;
+    }
+
+    modifier bobDepositEth() {
+        vm.startPrank(bob);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), SECOND_AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateral(weth.tokenAddress, SECOND_AMOUNT_OF_COLLATERAL);
+        vm.stopPrank();
+        _;
+    }
+
+    modifier bobDepositbtc() {
+        vm.startPrank(bob);
+        ERC20Mock(wbtc.tokenAddress).approve(address(dscEngine), SECOND_AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateral(wbtc.tokenAddress, SECOND_AMOUNT_OF_COLLATERAL);
         vm.stopPrank();
         _;
     }
 
     function test_RevertsIfCollateralIsZero() public {
         vm.startPrank(bob);
-        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         vm.expectRevert(DSCEngine.DSCEngine__MustSendCollateralGreaterThanZero.selector);
-        dscEngine.depositCollateral(tokenAddresses[0], 0);
+        dscEngine.depositCollateral(weth.tokenAddress, 0);
         vm.stopPrank();
     }
 
@@ -200,51 +213,51 @@ contract DSCEngineTest is Test {
 
     function test_CantDepositCollateralIfNotAlreadyInSystem() public {
         vm.startPrank(bob);
-        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
-        vm.expectRevert(DSCEngine.DSCEngine__UserNotInSystemAlready.selector); 
-        dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        vm.expectRevert(DSCEngine.DSCEngine__UserNotInSystemAlready.selector);
+        dscEngine.depositCollateral(weth.tokenAddress, AMOUNT_OF_COLLATERAL);
         vm.stopPrank();
     }
 
     function test_DepositAndMintDscFunctionworks() public {
         vm.startPrank(bob);
-        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
-        dscEngine.depositCollateralAndMintDsc(tokenAddresses[0], AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateralAndMintDsc(weth.tokenAddress, AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
         vm.stopPrank();
 
         // Ensure they are in system
         assert(dscEngine.isUserInSystem(bob) == true);
         // Ensure s_dscMinted mapping is updated correctly
-        (uint256 dscMinted,)=dscEngine.getAccountInformation(bob);
+        (uint256 dscMinted,) = dscEngine.getAccountInformation(bob);
         assert(dscMinted == MINT_AMOUNT);
-
     }
 
     function test_DepositAndMintDscFunctionRevertsIfHealthFactorBroken() public {
         vm.startPrank(bob);
-        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), BROKEN_AMOUNT_OF_COLLATERAL);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), BROKEN_AMOUNT_OF_COLLATERAL);
         vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
-        dscEngine.depositCollateralAndMintDsc(tokenAddresses[0], BROKEN_AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
+        dscEngine.depositCollateralAndMintDsc(weth.tokenAddress, BROKEN_AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
         vm.stopPrank();
-
     }
 
-    function test_CanDepositCollateralAndEmitEvent() public isNotAnvil {
+    function test_CanDepositCollateralAndEmitEvent() public isNotAnvil bobEnterSystem {
         vm.startPrank(bob);
-        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         vm.expectEmit(true, true, true, false, address(dscEngine));
-        emit CollateralDeposited(bob, tokenAddresses[0], AMOUNT_OF_COLLATERAL);
-        dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        emit CollateralDeposited(bob, weth.tokenAddress, AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateral(weth.tokenAddress, AMOUNT_OF_COLLATERAL);
         vm.stopPrank();
     }
 
-    function test_DepositCollateralUpdatesInformationAsExpected() public isNotAnvil bobDepositCollateral {
-        uint256 expectedDscMinted = 0;
+    function test_DepositCollateralUpdatesInformationAsExpected() public isNotAnvil bobEnterSystem bobDepositEth {
+        // Expected is 100 as Bob is in system but mo dsc minted when depositCollateral() called.
+        uint256 expectedDscMinted = MINT_AMOUNT;
         uint256 totalDscMinted;
-        uint256 expectedCollateralValueInUsd = (dscEngine.getUsdValue(tokenAddresses[0], AMOUNT_OF_COLLATERAL));
+        uint256 expectedCollateralValueInUsd =
+            (dscEngine.getUsdValue(weth.tokenAddress, AMOUNT_OF_COLLATERAL + SECOND_AMOUNT_OF_COLLATERAL));
         uint256 collateralValueInUsd;
-        uint256 expectedAmountOfCollateral = AMOUNT_OF_COLLATERAL;
-        uint256 amountOfCollateral = dscEngine.getAccountCollateralDeposited(bob, tokenAddresses[0]);
+        uint256 expectedAmountOfCollateral = AMOUNT_OF_COLLATERAL + SECOND_AMOUNT_OF_COLLATERAL;
+        uint256 amountOfCollateral = dscEngine.getAccountCollateralDeposited(bob, weth.tokenAddress);
 
         vm.prank(bob);
         (totalDscMinted, collateralValueInUsd) = dscEngine.getAccountInformation(bob);
@@ -254,10 +267,19 @@ contract DSCEngineTest is Test {
         assertEq(collateralValueInUsd, expectedCollateralValueInUsd);
     }
 
-    function test_DepositingCollateralGivesHealthFactor() public bobDepositCollateral{
-        uint256 bobHealthFactor = dscEngine.getHealthFactor(bob);
-        console.log("Bob health factor: %i", bobHealthFactor);
+    function test_DepositingCollateralUpdatesHealthFactor() public bobEnterSystem bobDepositEth {
+        uint256 bobExpectedHealthFactor = (
+            dscEngine.getUsdValue(weth.tokenAddress, ((AMOUNT_OF_COLLATERAL + SECOND_AMOUNT_OF_COLLATERAL))) / 2
+        ) / MINT_AMOUNT;
+
+        uint256 bobActualHealthFactor = dscEngine.getHealthFactor(bob);
+
+        assertEq(bobExpectedHealthFactor, bobActualHealthFactor);
     }
+
+    /**
+     * @dev Function to test DSCEngine__TransferFailed() but seems impossible to trigger such event.
+     */
 
     // function test_RevertIfCollateralTransferFailed() public isNotAnvil {
     //     // Transfer would fail if not approval?
@@ -269,23 +291,49 @@ contract DSCEngineTest is Test {
     // }
 
     /*//////////////////////////////////////////////////////////////
+                        MULTIPLE DEPOSIT TYPES
+    //////////////////////////////////////////////////////////////*/
+
+    function test_DepositEthAndBtc() public bobEnterSystem bobDepositbtc {
+        uint256 wethExpected = AMOUNT_OF_COLLATERAL;
+        uint256 wbtcExpected = AMOUNT_OF_COLLATERAL;
+        uint256 wethDeposited = dscEngine.getAccountCollateralDeposited(bob, weth.tokenAddress);
+        uint256 wbtcDeposited = dscEngine.getAccountCollateralDeposited(bob, wbtc.tokenAddress);
+
+        assertEq(wethExpected, wethDeposited);
+        assertEq(wbtcExpected, wbtcDeposited);
+    }
+
+    function test_MultipleDepositGivesRightHealthFactor() public bobEnterSystem bobDepositbtc {
+        uint256 bobExpectedHealthFactor = (
+            (
+                dscEngine.getUsdValue(weth.tokenAddress, AMOUNT_OF_COLLATERAL)
+                    + dscEngine.getUsdValue(wbtc.tokenAddress, AMOUNT_OF_COLLATERAL)
+            ) / 2
+        ) / MINT_AMOUNT;
+
+        uint256 bobActualHealthFactor = dscEngine.getHealthFactor(bob);
+
+        assertEq(bobExpectedHealthFactor, bobActualHealthFactor);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 MINTDSC
     //////////////////////////////////////////////////////////////*/
 
-    function test_MintDscFailsOnBrokenHealthFactor() public isNotAnvil bobDepositCollateral{
+    function test_MintDscFailsOnBrokenHealthFactor() public isNotAnvil bobEnterSystem {}
 
-    }
-
-    function test_MintDscExecutes() public isNotAnvil bobDepositCollateral{
-
-    }
+    function test_MintDscExecutes() public isNotAnvil bobEnterSystem {}
 
     /*//////////////////////////////////////////////////////////////
                            REDEEM COLLATERAL
     //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////
-                               LIQUIDATE
+                                BURNDSC
     //////////////////////////////////////////////////////////////*/
 
+    /*//////////////////////////////////////////////////////////////
+                               LIQUIDATE
+    //////////////////////////////////////////////////////////////*/
 }
