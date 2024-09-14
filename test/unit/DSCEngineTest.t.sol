@@ -369,14 +369,6 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_DSCEngine__BurnAmountGreaterThanDebtorMinted() public isNotAnvil bobEnterSystem {
-        vm.startPrank(bob);
-        ERC20(address(dsc)).approve(address(dscEngine), BROKEN_REDEEM_DSC_AMOUNT);
-        vm.expectRevert(DSCEngine.DSCEngine__BurnAmountGreaterThanDebtorMinted.selector);
-        dscEngine.userRedeemCollateralForDsc(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT, BROKEN_REDEEM_DSC_AMOUNT);
-        vm.stopPrank();
-    }
-
     function test_RedeemCollateralForDsc() public isNotAnvil bobEnterSystem {
         uint256 bobExpectedHealthFactor = (
             dscEngine.getUsdValue(weth.tokenAddress, (AMOUNT_OF_COLLATERAL - REDEEM_COLLATERAL_AMOUNT)) / 2
@@ -412,6 +404,16 @@ contract DSCEngineTest is Test {
     /*//////////////////////////////////////////////////////////////
                                 BURNDSC
     //////////////////////////////////////////////////////////////*/
+
+    function test_DSCEngine__BurnAmountGreaterThanDebtorMinted() public isNotAnvil bobEnterSystem {
+        vm.startPrank(bob);
+        ERC20(address(dsc)).approve(address(dscEngine), BROKEN_REDEEM_DSC_AMOUNT);
+        vm.expectRevert(DSCEngine.DSCEngine__BurnAmountGreaterThanDebtorMinted.selector);
+        dscEngine.userRedeemCollateralForDsc(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT, BROKEN_REDEEM_DSC_AMOUNT);
+        vm.stopPrank();
+    }
+
+
 
     /*//////////////////////////////////////////////////////////////
                                LIQUIDATE
