@@ -157,7 +157,7 @@ contract DSCEngineTest is Test {
         if (config.is_anvil()) {
             expectedWeth = 0.05e18;
         } else {
-            expectedWeth = (((uint256((usdAmount * 1e8) / (dscEngine.getLatestRoundDataValue(weth.tokenAddress))))));
+            expectedWeth = (((uint256((usdAmount * 1e18 * 1e8) / (dscEngine.getLatestRoundDataValue(weth.tokenAddress))))));
         }
 
         actualWeth = uint256(dscEngine.getTokenAmountFromUsd(weth.tokenAddress, usdAmount));
@@ -219,7 +219,7 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_DepositAndMintDscFunctionworks() public {
+    function test_DepositAndMintDscFunctionworks() public isNotAnvil {
         vm.startPrank(bob);
         ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         dscEngine.depositCollateralAndMintDsc(weth.tokenAddress, AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
@@ -232,7 +232,7 @@ contract DSCEngineTest is Test {
         assert(dscMinted == MINT_AMOUNT);
     }
 
-    function test_DepositAndMintDscFunctionRevertsIfHealthFactorBroken() public {
+    function test_DepositAndMintDscFunctionRevertsIfHealthFactorBroken() public isNotAnvil{
         vm.startPrank(bob);
         ERC20Mock(weth.tokenAddress).approve(address(dscEngine), BROKEN_AMOUNT_OF_COLLATERAL);
         vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
@@ -267,7 +267,7 @@ contract DSCEngineTest is Test {
         assertEq(collateralValueInUsd, expectedCollateralValueInUsd);
     }
 
-    function test_DepositingCollateralUpdatesHealthFactor() public bobEnterSystem bobDepositEth {
+    function test_DepositingCollateralUpdatesHealthFactor() public isNotAnvil bobEnterSystem bobDepositEth {
         uint256 bobExpectedHealthFactor = (
             dscEngine.getUsdValue(weth.tokenAddress, ((AMOUNT_OF_COLLATERAL + SECOND_AMOUNT_OF_COLLATERAL))) / 2
         ) / MINT_AMOUNT;
@@ -294,7 +294,7 @@ contract DSCEngineTest is Test {
                         MULTIPLE DEPOSIT TYPES
     //////////////////////////////////////////////////////////////*/
 
-    function test_DepositEthAndBtc() public bobEnterSystem bobDepositbtc {
+    function test_DepositEthAndBtc() public isNotAnvil bobEnterSystem bobDepositbtc {
         uint256 wethExpected = AMOUNT_OF_COLLATERAL;
         uint256 wbtcExpected = AMOUNT_OF_COLLATERAL;
         uint256 wethDeposited = dscEngine.getAccountCollateralDeposited(bob, weth.tokenAddress);
@@ -304,7 +304,7 @@ contract DSCEngineTest is Test {
         assertEq(wbtcExpected, wbtcDeposited);
     }
 
-    function test_MultipleDepositGivesRightHealthFactor() public bobEnterSystem bobDepositbtc {
+    function test_MultipleDepositGivesRightHealthFactor() public isNotAnvil bobEnterSystem bobDepositbtc {
         uint256 bobExpectedHealthFactor = (
             (
                 dscEngine.getUsdValue(weth.tokenAddress, AMOUNT_OF_COLLATERAL)
@@ -321,9 +321,24 @@ contract DSCEngineTest is Test {
                                 MINTDSC
     //////////////////////////////////////////////////////////////*/
 
-    function test_MintDscFailsOnBrokenHealthFactor() public isNotAnvil bobEnterSystem {}
+    function test_MintDscFailsOnBrokenHealthFactor() public isNotAnvil bobEnterSystem {
+        // Set bob's health factor to broken
+        vm.startPrank(bob);
+        vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
+        dscEngine.mintDsc(901);
+        vm.stopPrank();
+    }
 
-    function test_MintDscExecutes() public isNotAnvil bobEnterSystem {}
+    function test_MintDscExecutes() public isNotAnvil bobEnterSystem {
+        vm.startPrank(bob);
+        dscEngine.mintDsc(500);
+        vm.stopPrank();
+
+        uint256 expectedDsc = 600;
+        (uint256 actualDsc,) = dscEngine.getAccountInformation(bob);
+
+        assertEq(expectedDsc, actualDsc);
+    }
 
     /*//////////////////////////////////////////////////////////////
                            REDEEM COLLATERAL
