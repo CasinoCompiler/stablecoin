@@ -69,7 +69,7 @@ interface IDSCEngine {
 
     function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfcollateral) external;
 
-    function userExitSystem(uint256 dscTotalDebt) external;
+    function userExitSystem() external;
 
     /**
      *
