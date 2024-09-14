@@ -55,13 +55,14 @@ contract HelperConfig is Script {
                 wbtc: Token({
                     tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
                     pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
-                }), 
-                // **IMPORTANT** token address and pricefeedaddress just duplicate of wbtc. wfail isn't a real deployed token. 
+                }),
+                // **IMPORTANT** token address and pricefeedaddress just duplicate of wbtc. wfail isn't a real deployed token.
                 wfail: Token({
                     tokenAddress: 0x669d5DbF0f69e994aEbE5875556aA2ADFd449BFA,
                     pricefeedAddress: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43
                 })
-            }), is_anvil
+            }),
+            is_anvil
         );
     }
 
@@ -96,7 +97,7 @@ contract HelperConfig is Script {
         anvilConfig = NetworkConfig({
             weth: Token({tokenAddress: address(mockEthToken), pricefeedAddress: address(mockEthPricefeed)}),
             wbtc: Token({tokenAddress: address(mockBtcToken), pricefeedAddress: address(mockBtcPricefeed)}),
-            wfail:Token({tokenAddress: address(mockFailingToken), pricefeedAddress: address(mockFailingPricefeed)})
+            wfail: Token({tokenAddress: address(mockFailingToken), pricefeedAddress: address(mockFailingPricefeed)})
         });
 
         return (anvilConfig, is_anvil);

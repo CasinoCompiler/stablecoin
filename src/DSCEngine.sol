@@ -132,7 +132,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      * @param _user Token address of collateral address, matches keyword arg from msg.sender.
      */
     modifier alreadyInSystem(address _user) {
-        if (!isUserInSystem(_user)){
+        if (!isUserInSystem(_user)) {
             revert DSCEngine__UserNotInSystemAlready();
         }
         _;
@@ -166,7 +166,12 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         }
     }
 
-    function mintDsc(uint256 amountOfDscToMint) public validAmount(amountOfDscToMint) alreadyInSystem(msg.sender) nonReentrant {
+    function mintDsc(uint256 amountOfDscToMint)
+        public
+        validAmount(amountOfDscToMint)
+        alreadyInSystem(msg.sender)
+        nonReentrant
+    {
         s_dscMinted[msg.sender] += amountOfDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
         bool minted = i_dsc.mint(msg.sender, amountOfDscToMint);
@@ -258,10 +263,11 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         return MIN_HEALTH_FACTOR;
     }
 
-    function isUserInSystem(address user) public view returns(bool){
+    function isUserInSystem(address user) public view returns (bool) {
         return s_userInSystem[user];
     }
-    function decimals() public pure returns(uint256) {
+
+    function decimals() public pure returns (uint256) {
         return 18;
     }
 
@@ -321,8 +327,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         return uint256(answer);
     }
 
-    function getTokenAmountFromUsd(address tokenAddress, uint256 dscAmountInWei) public view returns (uint256) {
+    function getTokenAmountFromUsd(address tokenAddress, uint256 dscAmount) public view returns (uint256) {
         uint256 price = getLatestRoundDataValue(tokenAddress);
-        return (dscAmountInWei * PRECISION) / (price * ADDITIONAL_FEED_PRECISION);
+        return ((dscAmount * 1e18) * PRECISION) / (price * ADDITIONAL_FEED_PRECISION);
     }
 }

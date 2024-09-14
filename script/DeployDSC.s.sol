@@ -18,7 +18,8 @@ contract DeployDSC is Script {
 
     function run() external returns (DecentralizedStableCoin, DSCEngine, MockFailingTransferERC20, HelperConfig) {
         HelperConfig config = new HelperConfig();
-        (HelperConfig.Token memory weth, HelperConfig.Token memory wbtc,  HelperConfig.Token memory wfail) = config.activeNetworkConfig();
+        (HelperConfig.Token memory weth, HelperConfig.Token memory wbtc, HelperConfig.Token memory wfail) =
+            config.activeNetworkConfig();
 
         tokenAddresses = [weth.tokenAddress, wbtc.tokenAddress, wfail.tokenAddress];
         priceFeedAddresses = [weth.pricefeedAddress, wbtc.pricefeedAddress, wfail.pricefeedAddress];
@@ -30,6 +31,6 @@ contract DeployDSC is Script {
         dsc.transferOwnership(address(dscEngine));
 
         vm.stopBroadcast();
-        return (dsc, dscEngine, failingERC20,config);
+        return (dsc, dscEngine, failingERC20, config);
     }
 }
