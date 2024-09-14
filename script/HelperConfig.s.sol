@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "@forge/src/Script.sol";
+import {console} from "@forge/src/Test.sol";
 import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../src/DSCEngine.sol";
 import {MockV3Aggregator} from "../test/mocks/MockAggregatorV3Interface.sol";
@@ -16,6 +17,9 @@ import {MockFailingTransferERC20} from "../src/MockFailingTransferERC20.sol";
 contract HelperConfig is Script {
     NetworkConfig public activeNetworkConfig;
     bool public is_anvil;
+
+    MockV3Aggregator public mockEthPricefeed;
+    MockV3Aggregator public mockBtcPricefeed;
 
     struct NetworkConfig {
         Token weth;
@@ -76,8 +80,8 @@ contract HelperConfig is Script {
         }
 
         vm.startBroadcast();
-        MockV3Aggregator mockEthPricefeed = new MockV3Aggregator(DECIMALS, ETH_USD_PRICE);
-        MockV3Aggregator mockBtcPricefeed = new MockV3Aggregator(DECIMALS, BTC_USD_PRICE);
+        mockEthPricefeed = new MockV3Aggregator(DECIMALS, ETH_USD_PRICE);
+        mockBtcPricefeed = new MockV3Aggregator(DECIMALS, BTC_USD_PRICE);
         MockV3Aggregator mockFailingPricefeed = new MockV3Aggregator(DECIMALS, FAILING_USD_PRICE);
         ERC20Mock mockEthToken = new ERC20Mock();
         ERC20Mock mockBtcToken = new ERC20Mock();
