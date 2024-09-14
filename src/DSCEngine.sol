@@ -198,9 +198,9 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _burnDSC(amountOfDsc, msg.sender, msg.sender);
     }
 
-    function redeemCollateralForEqualDsc(address collateralTokenAddress, uint256 amountOfCollateral) public {
-        uint256 dscToBurn = getUsdValue(collateralTokenAddress, amountOfCollateral);
-        userRedeemCollateralForDsc(collateralTokenAddress, amountOfCollateral, dscToBurn);
+    function redeemCollateralForEqualDsc(address collateralTokenAddress, uint256 amountOfdsc) public {
+        uint256 collateralToRedeem = getTokenAmountFromUsd(collateralTokenAddress, amountOfdsc);
+        userRedeemCollateralForDsc(collateralTokenAddress, collateralToRedeem, amountOfdsc);
     }
 
     function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfCollateral) public {

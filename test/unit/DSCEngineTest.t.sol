@@ -7,6 +7,7 @@ import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@oz/contracts/mocks/token/ERC20Mock.sol";
+import {ERC20Burnable, ERC20} from "@oz/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {MockFailingTransferERC20} from "../../src/MockFailingTransferERC20.sol";
 
 contract DSCEngineTest is Test {
@@ -25,6 +26,10 @@ contract DSCEngineTest is Test {
     uint256 constant AMOUNT_OF_COLLATERAL = 1 ether;
     uint256 constant SECOND_AMOUNT_OF_COLLATERAL = 1 ether;
     uint256 constant BROKEN_AMOUNT_OF_COLLATERAL = 0.09 ether;
+    uint256 constant REDEEM_COLLATERAL_AMOUNT = 0.5 ether;
+    uint256 constant BROKEN_REDEEM_DSC_AMOUNT = 101;
+    uint256 constant REDEEM_DSC_AMOUNT = 50;
+    uint256 constant REDEEM_COLLATERAL_BREAKING_AMOUNT = 0.91 ether;
 
     HelperConfig.Token weth;
     HelperConfig.Token wbtc;
@@ -342,6 +347,66 @@ contract DSCEngineTest is Test {
 
     /*//////////////////////////////////////////////////////////////
                            REDEEM COLLATERAL
+    //////////////////////////////////////////////////////////////*/
+
+    function test_RedeemCollateralBasic() public isNotAnvil bobEnterSystem{
+        uint256 expectedRemainingCollateral = 0.5 ether;
+        uint256 actualRemainingCollateral;
+
+        vm.startPrank(bob);
+        dscEngine.userRedeemCollateral(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT);
+        vm.stopPrank();
+        actualRemainingCollateral = dscEngine.getAccountCollateralDeposited(bob, weth.tokenAddress);
+
+        assertEq(expectedRemainingCollateral, actualRemainingCollateral);
+    }
+
+    function test_RedeemCollateralRevertsOnBrokenHealthFactor() public isNotAnvil bobEnterSystem{
+        vm.startPrank(bob);
+        vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
+        dscEngine.userRedeemCollateral(weth.tokenAddress, REDEEM_COLLATERAL_BREAKING_AMOUNT);
+        vm.stopPrank();
+    }
+
+    function test_DSCEngine__InsufficientDscDebt() public isNotAnvil bobEnterSystem{
+        vm.startPrank(bob);
+        ERC20(address(dsc)).approve(address(dscEngine), BROKEN_REDEEM_DSC_AMOUNT);
+        vm.expectRevert(DSCEngine.DSCEngine__InsufficientDscDebt.selector);
+        dscEngine.userRedeemCollateralForDsc(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT, BROKEN_REDEEM_DSC_AMOUNT);
+        vm.stopPrank();
+
+    }
+
+    function test_RedeemCollateralForDsc() public isNotAnvil bobEnterSystem{
+        uint256 bobExpectedHealthFactor = (dscEngine.getUsdValue(weth.tokenAddress, (AMOUNT_OF_COLLATERAL - REDEEM_COLLATERAL_AMOUNT)) / 2 ) / (MINT_AMOUNT - REDEEM_DSC_AMOUNT);
+
+        vm.startPrank(bob);
+        ERC20(address(dsc)).approve(address(dscEngine), REDEEM_DSC_AMOUNT);
+        dscEngine.userRedeemCollateralForDsc(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT, REDEEM_DSC_AMOUNT);
+        vm.stopPrank();
+
+        uint256 bobActualHealthFactor = dscEngine.getHealthFactor(bob);
+
+        assertEq(bobExpectedHealthFactor, bobActualHealthFactor);
+
+    }
+
+    function test_redeemCollateralForEqualDsc() public isNotAnvil bobEnterSystem{
+        (,uint256 totalCollateralValueInUSD)= dscEngine.getAccountInformation(bob);
+        uint256 expectedEndingCollateral = totalCollateralValueInUSD - (REDEEM_DSC_AMOUNT * 1e18);
+
+        vm.startPrank(bob);
+        ERC20(address(dsc)).approve(address(dscEngine), REDEEM_DSC_AMOUNT);
+        dscEngine.redeemCollateralForEqualDsc(weth.tokenAddress, REDEEM_DSC_AMOUNT);
+        vm.stopPrank();
+        (,uint256 endingTotalCollateralValueInUSD)= dscEngine.getAccountInformation(bob);
+
+        assertEq(expectedEndingCollateral, endingTotalCollateralValueInUSD);
+
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                  REDEEM MULTIPLE TYPES OF COLLATERAL
     //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////
