@@ -53,6 +53,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__HealthFactorIsAboveThreshold();
     error DSCEngine__HealthFactorNotImproved();
     error DSCEngine__UserNotInSystemAlready();
+    error DSCEngine__InsufficientDscDebt();
 
     /**
      * State Variables
@@ -137,6 +138,15 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         }
         _;
     }
+
+    modifier ownerHasSufficientDsc(uint256 _dscAmount){
+        (uint256 _totalDsc, ) = getAccountInformation(msg.sender); 
+        if(_dscAmount > _totalDsc){
+            revert DSCEngine__InsufficientDscDebt();
+        }
+        _;
+    } 
+
     /**
      * Functions
      */
@@ -181,15 +191,23 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     }
 
     function userRedeemCollateralForDsc(address collateralTokenAddress, uint256 amountOfCollateral, uint256 amountOfDsc)
-        external
+        public
+        ownerHasSufficientDsc(amountOfDsc)
     {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
         _burnDSC(amountOfDsc, msg.sender, msg.sender);
     }
 
+    function redeemCollateralForEqualDsc(address collateralTokenAddress, uint256 amountOfCollateral) public {
+        uint256 dscToBurn = getUsdValue(collateralTokenAddress, amountOfCollateral);
+        userRedeemCollateralForDsc(collateralTokenAddress, amountOfCollateral, dscToBurn);
+    }
+
     function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfCollateral) public {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
     }
+
+    // Function userBurnDSC(uint256 amountToBurn) public {} ?? Redundant => user should interact with IERC(DSC).burn()
 
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
         external
@@ -232,7 +250,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     {
         s_userToCollateralDeposited[_from][collateralTokenAddress] -= amountOfCollateral;
         emit CollateralRedemeed(_from, _to, collateralTokenAddress, amountOfCollateral);
-        bool success = IERC20(i_dsc).transfer(_to, amountOfCollateral);
+        bool success = IERC20(collateralTokenAddress).transfer(_to, amountOfCollateral);
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
