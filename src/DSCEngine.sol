@@ -139,14 +139,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _;
     }
 
-    modifier ownerHasSufficientDsc(uint256 _dscAmount) {
-        (uint256 _totalDsc,) = getAccountInformation(msg.sender);
-        if (_dscAmount > _totalDsc) {
-            revert DSCEngine__InsufficientDscDebt();
-        }
-        _;
-    }
-
     /**
      * Functions
      */
@@ -192,7 +184,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
     function userRedeemCollateralForDsc(address collateralTokenAddress, uint256 amountOfCollateral, uint256 amountOfDsc)
         public
-        ownerHasSufficientDsc(amountOfDsc)
     {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
         _burnDSC(amountOfDsc, msg.sender, msg.sender);
