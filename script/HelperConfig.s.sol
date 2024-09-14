@@ -32,6 +32,7 @@ contract HelperConfig is Script {
     int256 public constant ETH_USD_PRICE = 2000e8;
     int256 public constant BTC_USD_PRICE = 1000e8;
     int256 public constant FAILING_USD_PRICE = 1e8;
+    uint256 public constant ERC20_PRECISION = 1e18;
 
     address bob = makeAddr("bob");
     address alice = makeAddr("alice");
@@ -82,13 +83,13 @@ contract HelperConfig is Script {
         MockFailingTransferERC20 mockFailingToken = new MockFailingTransferERC20();
 
         // Mint mockETH and mockBTC to accounts for testing on anvil
-        mockEthToken.mint(bob, 20);
-        mockBtcToken.mint(bob, 10);
-        mockEthToken.mint(alice, 20);
-        mockBtcToken.mint(alice, 10);
+        mockEthToken.mint(bob, 20 * ERC20_PRECISION);
+        mockBtcToken.mint(bob, 10 * ERC20_PRECISION);
+        mockEthToken.mint(alice, 20 * ERC20_PRECISION);
+        mockBtcToken.mint(alice, 10 * ERC20_PRECISION);
 
         //Mint failing to bob
-        mockFailingToken.mint(bob, 10);
+        mockFailingToken.mint(bob, 10 * ERC20_PRECISION);
 
         vm.stopBroadcast();
 

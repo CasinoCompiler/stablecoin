@@ -32,6 +32,7 @@ pragma solidity ^0.8.20;
 /**
  * Imports
  */
+import {Test, console} from "@forge/src/Test.sol";
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@oz/contracts/utils/ReentrancyGuard.sol";
 import {IDSCEngine} from "./IDSCEngine.sol";
@@ -215,6 +216,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = getHealthFactor(user);
+        console.log(userHealthFactor);
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__BreaksHealthFactor(userHealthFactor);
         }
@@ -268,6 +270,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     function getHealthFactor(address user) public view returns (uint256 healthFactor) {
         (uint256 totalDsc, uint256 collateralValue) = getAccountInformation(user);
+        console.log(totalDsc);
+        console.log(collateralValue);
         uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         healthFactor = collateralAdjustedForThreshold / totalDsc;
         return healthFactor;
