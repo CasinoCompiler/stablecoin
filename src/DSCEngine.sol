@@ -144,8 +144,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
     function depositCollateralAndMintDsc(address collateralTokenAddress, uint256 collateralAmount, uint256 dscToMint)
         public
-        alreadyInSystem(msg.sender)
     {
+        s_userInSystem[msg.sender] = true;
         depositCollateral(collateralTokenAddress, collateralAmount);
         mintDsc(dscToMint);
     }
@@ -166,7 +166,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         }
     }
 
-    function mintDsc(uint256 amountOfDscToMint) public validAmount(amountOfDscToMint) nonReentrant {
+    function mintDsc(uint256 amountOfDscToMint) public validAmount(amountOfDscToMint) alreadyInSystem(msg.sender) nonReentrant {
         s_dscMinted[msg.sender] += amountOfDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
         bool minted = i_dsc.mint(msg.sender, amountOfDscToMint);

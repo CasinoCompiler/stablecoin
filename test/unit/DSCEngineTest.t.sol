@@ -178,7 +178,7 @@ contract DSCEngineTest is Test {
     modifier bobDepositCollateral() {
         vm.startPrank(bob);
         ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
-        dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateralAndMintDsc(tokenAddresses[0], AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
         vm.stopPrank();
         _;
     }
@@ -195,6 +195,14 @@ contract DSCEngineTest is Test {
         vm.prank(bob);
         vm.expectRevert(DSCEngine.DSCEngine__CollateralTypeNotAllowed.selector);
         dscEngine.depositCollateral(address(0), 100);
+    }
+
+    function test_CantDepositCollateralIfNotAlreadyInSystem() public {
+        vm.startPrank(bob);
+        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        vm.expectRevert(DSCEngine.DSCEngine__UserNotInSystemAlready.selector); 
+        dscEngine.depositCollateral(tokenAddresses[0], AMOUNT_OF_COLLATERAL);
+        vm.stopPrank();
     }
 
     function test_CanDepositCollateralAndEmitEvent() public isNotAnvil {
