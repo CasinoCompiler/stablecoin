@@ -32,7 +32,6 @@ pragma solidity ^0.8.20;
 /**
  * Imports
  */
-import {Test, console} from "@forge/src/Test.sol";
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@oz/contracts/utils/ReentrancyGuard.sol";
 import {IDSCEngine} from "./IDSCEngine.sol";
@@ -48,10 +47,10 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     error DSCEngine__CollateralTypeNotAllowed();
     error DSCEngine__PricefeedCollectionError();
     error DSCEngine__TransferFailed();
-    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__BreaksHealthFactor();
     error DSCEngine__MintDscFailed();
     error DSCEngine__BurnAmountGreaterThanDebtorMinted();
-    error DSCEngine__HealthFactorIsAboveThreshold(uint256 healthFactor);
+    error DSCEngine__HealthFactorIsAboveThreshold();
     error DSCEngine__HealthFactorNotImproved();
     error DSCEngine__UserNotInSystemAlready();
 
@@ -194,7 +193,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     {
         uint256 startingHealthFactor = getHealthFactor(userToLiquidate);
         if (startingHealthFactor >= MIN_HEALTH_FACTOR) {
-            revert DSCEngine__HealthFactorIsAboveThreshold(startingHealthFactor);
+            revert DSCEngine__HealthFactorIsAboveThreshold();
         }
 
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, dscToCover);
@@ -216,9 +215,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = getHealthFactor(user);
-        console.log(userHealthFactor);
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
-            revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+            revert DSCEngine__BreaksHealthFactor();
         }
     }
 
@@ -263,6 +261,9 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     function isUserInSystem(address user) public view returns(bool){
         return s_userInSystem[user];
     }
+    function decimals() public pure returns(uint256) {
+        return 18;
+    }
 
     /**
      * @notice  Returns the health factor; if < 1, user can get liquidated
@@ -270,8 +271,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
      */
     function getHealthFactor(address user) public view returns (uint256 healthFactor) {
         (uint256 totalDsc, uint256 collateralValue) = getAccountInformation(user);
-        console.log(totalDsc);
-        console.log(collateralValue);
         uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         healthFactor = collateralAdjustedForThreshold / totalDsc;
         return healthFactor;

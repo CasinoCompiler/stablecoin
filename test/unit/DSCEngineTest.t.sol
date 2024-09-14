@@ -23,6 +23,7 @@ contract DSCEngineTest is Test {
     uint256 constant BURN_AMOUNT = 20;
     uint256 constant GAS_MONEY = 1 ether;
     uint256 constant AMOUNT_OF_COLLATERAL = 1 ether;
+    uint256 constant BROKEN_AMOUNT_OF_COLLATERAL = 0.09 ether;
 
     address[] public tokenAddresses;
     address[] public priceFeedAddresses;
@@ -210,6 +211,22 @@ contract DSCEngineTest is Test {
         ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
         dscEngine.depositCollateralAndMintDsc(tokenAddresses[0], AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
         vm.stopPrank();
+
+        // Ensure they are in system
+        assert(dscEngine.isUserInSystem(bob) == true);
+        // Ensure s_dscMinted mapping is updated correctly
+        (uint256 dscMinted,)=dscEngine.getAccountInformation(bob);
+        assert(dscMinted == MINT_AMOUNT);
+
+    }
+
+    function test_DepositAndMintDscFunctionRevertsIfHealthFactorBroken() public {
+        vm.startPrank(bob);
+        ERC20Mock(tokenAddresses[0]).approve(address(dscEngine), BROKEN_AMOUNT_OF_COLLATERAL);
+        vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
+        dscEngine.depositCollateralAndMintDsc(tokenAddresses[0], BROKEN_AMOUNT_OF_COLLATERAL, MINT_AMOUNT);
+        vm.stopPrank();
+
     }
 
     function test_CanDepositCollateralAndEmitEvent() public isNotAnvil {
