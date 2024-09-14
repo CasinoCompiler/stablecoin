@@ -9,6 +9,7 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@oz/contracts/mocks/token/ERC20Mock.sol";
 import {ERC20Burnable, ERC20} from "@oz/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {MockFailingTransferERC20} from "../../src/MockFailingTransferERC20.sol";
+import {MockV3Aggregator} from "../mocks/MockAggregatorV3Interface.sol";
 
 contract DSCEngineTest is Test {
     DeployDSC deployDSC;
@@ -400,6 +401,34 @@ contract DSCEngineTest is Test {
     /*//////////////////////////////////////////////////////////////
                   REDEEM MULTIPLE TYPES OF COLLATERAL
     //////////////////////////////////////////////////////////////*/
+
+    /*//////////////////////////////////////////////////////////////
+                             USER EXIT SYSTEM
+    //////////////////////////////////////////////////////////////*/
+
+    function test_exitSystemRevertsIfBadDebt() public isNotAnvil bobEnterSystem{
+        MockV3Aggregator(weth.pricefeedAddress).updateAnswer(2e8);
+
+        vm.startPrank(bob);
+        vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
+        dscEngine.userExitSystem();
+        vm.stopPrank();
+    }
+
+    function test_UserExitsSystem() public isNotAnvil bobEnterSystem bobDepositEth bobDepositbtc{
+        vm.startPrank(bob);
+        ERC20(address(dsc)).approve(address(dscEngine), MINT_AMOUNT);
+        dscEngine.userExitSystem();
+        vm.stopPrank();
+
+        uint256 totalCollateralValue = dscEngine.getAccountCollateralValue(bob);
+        (uint256 dscMinted, ) = dscEngine.getAccountInformation(bob);
+        bool inSystem = dscEngine.isUserInSystem(bob);
+
+        assert(totalCollateralValue == 0);
+        assert(dscMinted == 0);
+        assert(inSystem == false);
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 BURNDSC

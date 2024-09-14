@@ -214,6 +214,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
             if (!success) {
                 revert DSCEngine__TransferFailed();
             }
+            s_userToCollateralDeposited[msg.sender][collateralTokenAddress] -= amountOfCollateral;
         }
         _burnDSC(dscTotalDebt, msg.sender, msg.sender);
         s_userInSystem[msg.sender] = false;
