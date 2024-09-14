@@ -162,7 +162,8 @@ contract DSCEngineTest is Test {
         if (config.is_anvil()) {
             expectedWeth = 0.05e18;
         } else {
-            expectedWeth = (((uint256((usdAmount * 1e18 * 1e8) / (dscEngine.getLatestRoundDataValue(weth.tokenAddress))))));
+            expectedWeth =
+                (((uint256((usdAmount * 1e18 * 1e8) / (dscEngine.getLatestRoundDataValue(weth.tokenAddress))))));
         }
 
         actualWeth = uint256(dscEngine.getTokenAmountFromUsd(weth.tokenAddress, usdAmount));
@@ -237,7 +238,7 @@ contract DSCEngineTest is Test {
         assert(dscMinted == MINT_AMOUNT);
     }
 
-    function test_DepositAndMintDscFunctionRevertsIfHealthFactorBroken() public isNotAnvil{
+    function test_DepositAndMintDscFunctionRevertsIfHealthFactorBroken() public isNotAnvil {
         vm.startPrank(bob);
         ERC20Mock(weth.tokenAddress).approve(address(dscEngine), BROKEN_AMOUNT_OF_COLLATERAL);
         vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
@@ -349,7 +350,7 @@ contract DSCEngineTest is Test {
                            REDEEM COLLATERAL
     //////////////////////////////////////////////////////////////*/
 
-    function test_RedeemCollateralBasic() public isNotAnvil bobEnterSystem{
+    function test_RedeemCollateralBasic() public isNotAnvil bobEnterSystem {
         uint256 expectedRemainingCollateral = 0.5 ether;
         uint256 actualRemainingCollateral;
 
@@ -361,24 +362,25 @@ contract DSCEngineTest is Test {
         assertEq(expectedRemainingCollateral, actualRemainingCollateral);
     }
 
-    function test_RedeemCollateralRevertsOnBrokenHealthFactor() public isNotAnvil bobEnterSystem{
+    function test_RedeemCollateralRevertsOnBrokenHealthFactor() public isNotAnvil bobEnterSystem {
         vm.startPrank(bob);
         vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
         dscEngine.userRedeemCollateral(weth.tokenAddress, REDEEM_COLLATERAL_BREAKING_AMOUNT);
         vm.stopPrank();
     }
 
-    function test_DSCEngine__InsufficientDscDebt() public isNotAnvil bobEnterSystem{
+    function test_DSCEngine__InsufficientDscDebt() public isNotAnvil bobEnterSystem {
         vm.startPrank(bob);
         ERC20(address(dsc)).approve(address(dscEngine), BROKEN_REDEEM_DSC_AMOUNT);
         vm.expectRevert(DSCEngine.DSCEngine__InsufficientDscDebt.selector);
         dscEngine.userRedeemCollateralForDsc(weth.tokenAddress, REDEEM_COLLATERAL_AMOUNT, BROKEN_REDEEM_DSC_AMOUNT);
         vm.stopPrank();
-
     }
 
-    function test_RedeemCollateralForDsc() public isNotAnvil bobEnterSystem{
-        uint256 bobExpectedHealthFactor = (dscEngine.getUsdValue(weth.tokenAddress, (AMOUNT_OF_COLLATERAL - REDEEM_COLLATERAL_AMOUNT)) / 2 ) / (MINT_AMOUNT - REDEEM_DSC_AMOUNT);
+    function test_RedeemCollateralForDsc() public isNotAnvil bobEnterSystem {
+        uint256 bobExpectedHealthFactor = (
+            dscEngine.getUsdValue(weth.tokenAddress, (AMOUNT_OF_COLLATERAL - REDEEM_COLLATERAL_AMOUNT)) / 2
+        ) / (MINT_AMOUNT - REDEEM_DSC_AMOUNT);
 
         vm.startPrank(bob);
         ERC20(address(dsc)).approve(address(dscEngine), REDEEM_DSC_AMOUNT);
@@ -388,21 +390,19 @@ contract DSCEngineTest is Test {
         uint256 bobActualHealthFactor = dscEngine.getHealthFactor(bob);
 
         assertEq(bobExpectedHealthFactor, bobActualHealthFactor);
-
     }
 
-    function test_redeemCollateralForEqualDsc() public isNotAnvil bobEnterSystem{
-        (,uint256 totalCollateralValueInUSD)= dscEngine.getAccountInformation(bob);
+    function test_redeemCollateralForEqualDsc() public isNotAnvil bobEnterSystem {
+        (, uint256 totalCollateralValueInUSD) = dscEngine.getAccountInformation(bob);
         uint256 expectedEndingCollateral = totalCollateralValueInUSD - (REDEEM_DSC_AMOUNT * 1e18);
 
         vm.startPrank(bob);
         ERC20(address(dsc)).approve(address(dscEngine), REDEEM_DSC_AMOUNT);
         dscEngine.redeemCollateralForEqualDsc(weth.tokenAddress, REDEEM_DSC_AMOUNT);
         vm.stopPrank();
-        (,uint256 endingTotalCollateralValueInUSD)= dscEngine.getAccountInformation(bob);
+        (, uint256 endingTotalCollateralValueInUSD) = dscEngine.getAccountInformation(bob);
 
         assertEq(expectedEndingCollateral, endingTotalCollateralValueInUSD);
-
     }
 
     /*//////////////////////////////////////////////////////////////

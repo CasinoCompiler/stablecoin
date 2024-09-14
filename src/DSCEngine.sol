@@ -139,13 +139,13 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _;
     }
 
-    modifier ownerHasSufficientDsc(uint256 _dscAmount){
-        (uint256 _totalDsc, ) = getAccountInformation(msg.sender); 
-        if(_dscAmount > _totalDsc){
+    modifier ownerHasSufficientDsc(uint256 _dscAmount) {
+        (uint256 _totalDsc,) = getAccountInformation(msg.sender);
+        if (_dscAmount > _totalDsc) {
             revert DSCEngine__InsufficientDscDebt();
         }
         _;
-    } 
+    }
 
     /**
      * Functions

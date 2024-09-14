@@ -64,7 +64,7 @@ interface IDSCEngine {
 
     function userRedeemCollateralForDsc(address collateralTokenAddress, uint256 amountOfCollateral, uint256 amountOfDsc)
         external;
-    
+
     function redeemCollateralForEqualDsc(address collateralTokenAddress, uint256 amountOfCollateral) external;
 
     function userRedeemCollateral(address collateralTokenAddress, uint256 amountOfcollateral) external;
