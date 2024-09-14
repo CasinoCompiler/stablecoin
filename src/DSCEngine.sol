@@ -198,7 +198,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _redeemCollateral(collateralTokenAddress, amountOfCollateral, msg.sender, msg.sender);
     }
 
-    function userExitSystem() public alreadyInSystem(msg.sender){
+    function userExitSystem() public alreadyInSystem(msg.sender) {
         // Check health factor is okay
 
         // Yes? withdraw all collateral and burn dsc
@@ -207,7 +207,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
 
         _revertIfHealthFactorIsBroken(msg.sender);
         uint256 dscTotalDebt = s_dscMinted[msg.sender];
-        for (uint256 i = 0; i < s_collateralTokens.length;i++){
+        for (uint256 i = 0; i < s_collateralTokens.length; i++) {
             address collateralTokenAddress = s_collateralTokens[i];
             uint256 amountOfCollateral = s_userToCollateralDeposited[msg.sender][collateralTokenAddress];
             bool success = IERC20(collateralTokenAddress).transfer(msg.sender, amountOfCollateral);
@@ -218,7 +218,6 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         }
         _burnDSC(dscTotalDebt, msg.sender, msg.sender);
         s_userInSystem[msg.sender] = false;
-
     }
 
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)

@@ -406,7 +406,7 @@ contract DSCEngineTest is Test {
                              USER EXIT SYSTEM
     //////////////////////////////////////////////////////////////*/
 
-    function test_exitSystemRevertsIfBadDebt() public isNotAnvil bobEnterSystem{
+    function test_exitSystemRevertsIfBadDebt() public isNotAnvil bobEnterSystem {
         MockV3Aggregator(weth.pricefeedAddress).updateAnswer(2e8);
 
         vm.startPrank(bob);
@@ -415,14 +415,14 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_UserExitsSystem() public isNotAnvil bobEnterSystem bobDepositEth bobDepositbtc{
+    function test_UserExitsSystem() public isNotAnvil bobEnterSystem bobDepositEth bobDepositbtc {
         vm.startPrank(bob);
         ERC20(address(dsc)).approve(address(dscEngine), MINT_AMOUNT);
         dscEngine.userExitSystem();
         vm.stopPrank();
 
         uint256 totalCollateralValue = dscEngine.getAccountCollateralValue(bob);
-        (uint256 dscMinted, ) = dscEngine.getAccountInformation(bob);
+        (uint256 dscMinted,) = dscEngine.getAccountInformation(bob);
         bool inSystem = dscEngine.isUserInSystem(bob);
 
         assert(totalCollateralValue == 0);
