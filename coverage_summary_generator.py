@@ -27,10 +27,8 @@ def write_summary(summary, output_file):
             if items:  # Only write data for contracts with uncovered elements
                 file.write(f"Contract: {contract}\n")
                 file.write(f"  Uncovered elements: {len(items)}\n")
-                for item in items[:10]:  # Show only first 10 items
+                for item in items:
                     file.write(f"    - {item}\n")
-                if len(items) > 10:
-                    file.write(f"    ... and {len(items) - 10} more\n")
                 file.write("\n")
 
 # Usage
