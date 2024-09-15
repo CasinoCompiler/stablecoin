@@ -462,7 +462,7 @@ contract DSCEngineTest is Test {
                                LIQUIDATE
     //////////////////////////////////////////////////////////////*/
 
-    function test_OnlyBadDebtorsCanBeLiquidated() public isNotAnvil bobEnterSystem{
+    function test_OnlyBadDebtorsCanBeLiquidated() public isNotAnvil bobEnterSystem aliceEnterSystem{
         vm.startPrank(alice);
         vm.expectRevert(DSCEngine.DSCEngine__HealthFactorIsAboveThreshold.selector);
         dscEngine.liquidate(weth.tokenAddress, bob, 100);
@@ -487,4 +487,17 @@ contract DSCEngineTest is Test {
 
     }
 
+    function test_CanPartiallyLiquidate() public isNotAnvil bobEnterSystem aliceEnterSystem aliceDepositbtc{
+        // Set eth price to 100 therefore health factor broken
+        MockV3Aggregator(weth.pricefeedAddress).updateAnswer(150e8);
+        uint256 partialLiquidationAmount = 25;
+
+        vm.startPrank(alice);
+        ERC20Mock(address(dsc)).approve(address(dscEngine), partialLiquidationAmount);
+        dscEngine.liquidate(weth.tokenAddress, bob, partialLiquidationAmount);
+        vm.stopPrank();
+        (uint256 endingDscBalance,) = dscEngine.getAccountInformation(bob);
+
+        assertEq(MINT_AMOUNT - partialLiquidationAmount, endingDscBalance);
+    }
 }
