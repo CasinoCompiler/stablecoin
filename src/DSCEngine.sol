@@ -32,6 +32,7 @@ pragma solidity ^0.8.20;
 /**
  * Imports
  */
+import {console} from "@forge/src/Test.sol";
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@oz/contracts/utils/ReentrancyGuard.sol";
 import {IDSCEngine} from "./IDSCEngine.sol";
@@ -223,23 +224,19 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
         external
         validAmount(dscToCover)
-        nonReentrant
     {
         uint256 startingHealthFactor = getHealthFactor(userToLiquidate);
         if (startingHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__HealthFactorIsAboveThreshold();
         }
 
-        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, dscToCover);
-        uint256 bonus = (tokenAmountFromDebtCovered * LIQUIDATOR_BONUS) / LIQUIDATOR_PRECISION;
-        uint256 total = tokenAmountFromDebtCovered + bonus;
-        _redeemCollateral(collateralTokenAddress, total, userToLiquidate, msg.sender);
-        _burnDSC(dscToCover, msg.sender, userToLiquidate);
-
         // Remove bad debtor from system; dsc has been covered
-        if(s_dscMinted[userToLiquidate] == 0){
+        if(s_dscMinted[userToLiquidate] == dscToCover){
             s_userInSystem[userToLiquidate] = false;
         }
+
+        _liquidateCollateral(collateralTokenAddress, dscToCover, userToLiquidate, msg.sender);
+        _burnDSC(dscToCover, msg.sender, userToLiquidate);
 
         // For partial liquidations
         if (s_userInSystem[userToLiquidate]){
@@ -275,7 +272,10 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
+
+        if(s_userInSystem[_from]){
         _revertIfHealthFactorIsBroken(_from);
+        }
     }
 
     function _burnDSC(uint256 _amount, address _dscDebtPayee, address _debtor) private validAmount(_amount) {
@@ -288,6 +288,25 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
             revert DSCEngine__TransferFailed();
         }
         i_dsc.burn(_amount);
+    }
+
+    function _liquidateCollateral(
+        address collateralTokenAddress,
+        uint256 dscToCover,
+        address userToLiquidate,
+        address liquidator
+    ) private {
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, dscToCover);
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATOR_BONUS) / LIQUIDATOR_PRECISION;
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+
+        s_userToCollateralDeposited[userToLiquidate][collateralTokenAddress] -= tokenAmountFromDebtCovered;
+
+        emit CollateralLiquidated(userToLiquidate, msg.sender, collateralTokenAddress, totalCollateralToRedeem, dscToCover);
+        bool success = IERC20(collateralTokenAddress).transfer(liquidator, totalCollateralToRedeem);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
     }
 
     /**
