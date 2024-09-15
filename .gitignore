@@ -13,3 +13,5 @@ docs/
 # Dotenv file
 .env
 debug.txt
+summary.txt
+debug-refined.txt
