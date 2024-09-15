@@ -10,12 +10,29 @@ interface IDSCEngine {
     //////////////////////////////////////////////////////////////*/
     /**
      * @dev Emitted when depositCollateral() function is called.
-     * @param depositer                 address that called function
-     * @param collateralTokenAddress    address of collateral type deposited
-     * @param collateralAmount          amount of collateral deposited
+     * @param depositer                 Address that called function
+     * @param collateralTokenAddress    Address of collateral type deposited
+     * @param collateralAmount          Amount of collateral deposited
      */
     event CollateralDeposited(
         address indexed depositer, address indexed collateralTokenAddress, uint256 indexed collateralAmount
+    );
+
+    /**
+     * @dev Emitted when liquidate() function is used.
+     *      A different mechanism was required to redeem the collateral. 
+     * @param user                      Liquidated User
+     * @param liquidator                Liquidator
+     * @param collateralTokenAddress    Address of collateral type deposited
+     * @param totalCollateralToRedeem   Amount of Collateral redeemed
+     * @param debtToCover               DSC debt covered by liquidator
+     */
+    event CollateralLiquidated(
+        address indexed user, 
+        address indexed liquidator, 
+        address indexed collateralTokenAddress, 
+        uint256 totalCollateralToRedeem, 
+        uint256 debtToCover
     );
 
     /**
