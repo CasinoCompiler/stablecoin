@@ -5,6 +5,14 @@
 import re
 from collections import defaultdict
 
+def main():
+    debug_file = 'debug.txt'
+    output_file = 'debug-refined.txt'
+
+    summary = parse_debug_file(debug_file)
+    write_summary(summary, output_file)
+    print(f"Summary has been written to {output_file}")
+
 def parse_debug_file(file_path):
     with open(file_path, 'r') as file:
         content = file.read()
@@ -38,10 +46,5 @@ def write_summary(summary, output_file):
                 
                 file.write("\n")
 
-# Usage
-debug_file = 'debug.txt'
-output_file = 'debug-refined.txt'
-
-summary = parse_debug_file(debug_file)
-write_summary(summary, output_file)
-print(f"Summary has been written to {output_file}")
+if __name__ == "__main__":
+    main()
