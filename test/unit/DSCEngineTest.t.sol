@@ -188,6 +188,14 @@ contract DSCEngineTest is Test {
         _;
     }
 
+    modifier aliceEnterSystem() {
+        vm.startPrank(alice);
+        ERC20Mock(weth.tokenAddress).approve(address(dscEngine), AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateralAndMintDsc(weth.tokenAddress, AMOUNT_OF_COLLATERAL, MINT_AMOUNT * 2);
+        vm.stopPrank();
+        _;
+    }
+
     modifier bobDepositEth() {
         vm.startPrank(bob);
         ERC20Mock(weth.tokenAddress).approve(address(dscEngine), SECOND_AMOUNT_OF_COLLATERAL);
@@ -198,6 +206,14 @@ contract DSCEngineTest is Test {
 
     modifier bobDepositbtc() {
         vm.startPrank(bob);
+        ERC20Mock(wbtc.tokenAddress).approve(address(dscEngine), SECOND_AMOUNT_OF_COLLATERAL);
+        dscEngine.depositCollateral(wbtc.tokenAddress, SECOND_AMOUNT_OF_COLLATERAL);
+        vm.stopPrank();
+        _;
+    }
+
+    modifier aliceDepositbtc() {
+        vm.startPrank(alice);
         ERC20Mock(wbtc.tokenAddress).approve(address(dscEngine), SECOND_AMOUNT_OF_COLLATERAL);
         dscEngine.depositCollateral(wbtc.tokenAddress, SECOND_AMOUNT_OF_COLLATERAL);
         vm.stopPrank();
@@ -445,4 +461,30 @@ contract DSCEngineTest is Test {
     /*//////////////////////////////////////////////////////////////
                                LIQUIDATE
     //////////////////////////////////////////////////////////////*/
+
+    function test_OnlyBadDebtorsCanBeLiquidated() public isNotAnvil bobEnterSystem{
+        vm.startPrank(alice);
+        vm.expectRevert(DSCEngine.DSCEngine__HealthFactorIsAboveThreshold.selector);
+        dscEngine.liquidate(weth.tokenAddress, bob, 100);
+        vm.stopPrank();
+
+    }
+
+    function test_CanLiquidateBadActor() public isNotAnvil bobEnterSystem aliceEnterSystem aliceDepositbtc{
+        // Set eth price to 100 therefore health factor broken
+        MockV3Aggregator(weth.pricefeedAddress).updateAnswer(100e8);
+        uint256 expectedLiquidationPrize = 1.1 ether;
+        uint256 expectedContractBalance = AMOUNT_OF_COLLATERAL + AMOUNT_OF_COLLATERAL - expectedLiquidationPrize;
+
+        vm.startPrank(alice);
+        ERC20Mock(address(dsc)).approve(address(dscEngine), MINT_AMOUNT);
+        dscEngine.liquidate(weth.tokenAddress, bob, MINT_AMOUNT);
+        vm.stopPrank();
+
+        uint256 actualContractBalance = ERC20(weth.tokenAddress).balanceOf(address(dscEngine));
+
+        assertEq(expectedContractBalance, actualContractBalance);
+
+    }
+
 }

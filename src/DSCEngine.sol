@@ -224,6 +224,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     function liquidate(address collateralTokenAddress, address userToLiquidate, uint256 dscToCover)
         external
         validAmount(dscToCover)
+        nonReentrant
     {
         uint256 startingHealthFactor = getHealthFactor(userToLiquidate);
         if (startingHealthFactor >= MIN_HEALTH_FACTOR) {
