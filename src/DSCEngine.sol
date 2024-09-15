@@ -236,10 +236,20 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         _redeemCollateral(collateralTokenAddress, total, userToLiquidate, msg.sender);
         _burnDSC(dscToCover, msg.sender, userToLiquidate);
 
+        // Remove bad debtor from system; dsc has been covered
+        if(s_dscMinted[userToLiquidate] == 0){
+            s_userInSystem[userToLiquidate] = false;
+        }
+
+        // For partial liquidations
+        if (s_userInSystem[userToLiquidate]){
         uint256 endingHealthFactor = getHealthFactor(userToLiquidate);
         if (endingHealthFactor < startingHealthFactor) {
             revert DSCEngine__HealthFactorNotImproved();
+            }
         }
+
+        // sort later
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
