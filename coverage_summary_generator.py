@@ -3,6 +3,7 @@
 ### User must fist run make report (forge coverage --report debug >debug.txt) to ensure debug.txt has been created
 
 import re
+from collections import defaultdict
 
 def parse_debug_file(file_path):
     with open(file_path, 'r') as file:
@@ -13,22 +14,28 @@ def parse_debug_file(file_path):
     summary = {}
     for section, details in uncovered_sections:
         if section not in summary:
-            summary[section] = []
+            summary[section] = defaultdict(list)
         
         uncovered_items = re.findall(r'- (.+): (.+), hits: 0\)', details)
         for item_type, item_content in uncovered_items:
-            summary[section].append(f"{item_type}: {item_content}")
+            summary[section][item_type].append(item_content)
 
     return summary
 
 def write_summary(summary, output_file):
     with open(output_file, 'w') as file:
         for contract, items in summary.items():
-            if items:  # Only write data for contracts with uncovered elements
+            if items:
+                total_uncovered = sum(len(group) for group in items.values())
                 file.write(f"Contract: {contract}\n")
-                file.write(f"  Uncovered elements: {len(items)}\n")
-                for item in items:
-                    file.write(f"    - {item}\n")
+                file.write(f"  Uncovered elements: {total_uncovered}\n")
+                
+                for item_type, contents in items.items():
+                    if contents:
+                        file.write(f"  {item_type} ({len(contents)}):\n")
+                        for content in contents:
+                            file.write(f"    - {content}\n")
+                
                 file.write("\n")
 
 # Usage
