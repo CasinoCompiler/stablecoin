@@ -321,6 +321,10 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         return MIN_HEALTH_FACTOR;
     }
 
+    function getLisOfCollateralTokenAddress() public view returns(address[] memory){
+        return s_collateralTokens;
+    }
+
     function isUserInSystem(address user) public view returns (bool) {
         return s_userInSystem[user];
     }
