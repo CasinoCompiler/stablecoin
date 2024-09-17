@@ -393,4 +393,11 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         uint256 price = getLatestRoundDataValue(tokenAddress);
         return ((dscAmount * 1e18) * PRECISION) / (price * ADDITIONAL_FEED_PRECISION);
     }
+
+    function getMaxDscForCollateral(address collateralTokenAddress, uint256 amountOfcollateral) public view returns(uint256){
+        uint256 collateralUsdValue = getUsdValue(collateralTokenAddress, amountOfcollateral);
+        uint256 maxDsc = collateralUsdValue * LIQUIDATION_THRESHOLD / LIQUIDATION_PRECISION;
+        return maxDsc;
+    }
+
 }

@@ -500,4 +500,14 @@ contract DSCEngineTest is Test {
 
         assertEq(MINT_AMOUNT - partialLiquidationAmount, endingDscBalance);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                            GETTER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_getMaxDscForCollateral() public view isNotAnvil{
+        uint256 maxDsc = dscEngine.getMaxDscForCollateral(weth.tokenAddress, 1);
+        
+        assertEq(maxDsc, uint256(config.ETH_USD_PRICE() / 1e8) / 2);
+    }
 }
