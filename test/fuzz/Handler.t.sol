@@ -18,6 +18,10 @@ contract Handler is Test {
 
     ERC20Mock weth;
     ERC20Mock wbtc;
+    ERC20Mock wfail;
+
+    uint256 MAX_SIZE = type(uint96).max;
+    
 
     constructor(DSCEngine _dscEngine, DecentralizedStableCoin _dsc) {
         dscEngine = _dscEngine;
@@ -26,16 +30,22 @@ contract Handler is Test {
         address[] memory collateralTokens = dscEngine.getLisOfCollateralTokenAddress();
         weth = ERC20Mock(collateralTokens[0]);
         wbtc = ERC20Mock(collateralTokens[1]);
+        wfail = ERC20Mock(collateralTokens[2]);
 
     }
 
-    function depositCollateral(uint256 collateralSeed, uint256 amountOfCollateral) public {
+    function depositCollateralAndMintDsc(uint256 collateralSeed, uint256 amountOfCollateral, uint256 amountOfDsc) public {
+
         ERC20Mock collateral = _getCollateralSeed(collateralSeed);
-        dscEngine.depositCollateral(address(collateral), amountOfCollateral);
+        amountOfCollateral = bound(amountOfCollateral, 1, MAX_SIZE);
+        amountOfDsc = bound(amountOfDsc, 1, MAX_SIZE);
+        collateral.mint(msg.sender, amountOfCollateral);
+        collateral.approve(address(dscEngine), amountOfCollateral);
+        dscEngine.depositCollateralAndMintDsc(address(collateral), amountOfCollateral, amountOfDsc);
     }
 
     function _getCollateralSeed(uint256 collateralSeed) private view returns(ERC20Mock) {
-        if (collateralSeed % 2 == 0) {
+        if (collateralSeed % 3 == 0) {
             return weth;
         }
         return wbtc;
