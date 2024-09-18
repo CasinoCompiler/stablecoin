@@ -506,8 +506,9 @@ contract DSCEngineTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_getMaxDscForCollateral() public view isNotAnvil{
-        uint256 maxDsc = dscEngine.getMaxDscForCollateral(weth.tokenAddress, 1);
+        uint256 maxDsc = dscEngine.getMaxDscForCollateral(weth.tokenAddress, 73985845416148451523683644738);
+        uint256 _amount = 73985845416148451523683644738;
         
-        assertEq(maxDsc, uint256(config.ETH_USD_PRICE() / 1e8) / 2);
+        assertEq(maxDsc, uint256(config.ETH_USD_PRICE() / 1e8) * _amount / 2);
     }
 }

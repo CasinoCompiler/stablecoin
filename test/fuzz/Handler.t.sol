@@ -34,14 +34,32 @@ contract Handler is Test {
 
     }
 
-    function depositCollateralAndMintDsc(uint256 collateralSeed, uint256 amountOfCollateral, uint256 amountOfDsc) public {
+    function depositCollateralandDscMinted(uint256 collateralSeed, uint256 amountOfCollateral, uint256 amountOfDsc) public {
 
         ERC20Mock collateral = _getCollateralSeed(collateralSeed);
+        console.log("collateral address;", address(collateral));
         amountOfCollateral = bound(amountOfCollateral, 1, MAX_SIZE);
-        amountOfDsc = bound(amountOfDsc, 1, MAX_SIZE);
+        console.log("Amount of collateral:", amountOfCollateral);
+        uint256 MAX_DSC = dscEngine.getMaxDscForCollateral(address(collateral), amountOfCollateral);
+        console.log("Max dsc: ", MAX_DSC);
+        amountOfDsc = bound(amountOfDsc, 1, MAX_DSC);
+        console.log("Amount of dsc: ", amountOfDsc);
+
+        vm.startPrank(msg.sender);
         collateral.mint(msg.sender, amountOfCollateral);
         collateral.approve(address(dscEngine), amountOfCollateral);
         dscEngine.depositCollateralAndMintDsc(address(collateral), amountOfCollateral, amountOfDsc);
+        vm.stopPrank();
+    }
+
+    function redeemCollateral(uint256 collateralSeed, uint256 amountOfCollateral) public {
+        ERC20Mock collateral = _getCollateralSeed(collateralSeed);
+        uint256 maxCollateralToRedeem = dscEngine.getAccountCollateralDeposited(msg.sender, address(collateral));
+        amountOfCollateral = bound(amountOfCollateral, 0, maxCollateralToRedeem);
+        if (amountOfCollateral == 0){
+            return;
+        }
+        dscEngine.userRedeemCollateral(address(collateral), amountOfCollateral);
     }
 
     function _getCollateralSeed(uint256 collateralSeed) private view returns(ERC20Mock) {

@@ -38,7 +38,7 @@ import {ReentrancyGuard} from "@oz/contracts/utils/ReentrancyGuard.sol";
 import {IDSCEngine} from "./IDSCEngine.sol";
 import {IERC20} from "@oz/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-// @Order Imports, Interfaces, Libraries, Contracts
+import {OracleLib} from "./libraries/OracleLib.sol";
 
 contract DSCEngine is ReentrancyGuard, IDSCEngine {
     /**
@@ -78,6 +78,11 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     address[] private s_collateralTokens;
 
     DecentralizedStableCoin private immutable i_dsc;
+
+    /**
+     * Type Declaration
+     */
+    using OracleLib for AggregatorV3Interface;
 
     /**
      *
@@ -227,6 +232,7 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         nonReentrant
     {
         uint256 startingHealthFactor = getHealthFactor(userToLiquidate);
+        console.log(startingHealthFactor);
         if (startingHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__HealthFactorIsAboveThreshold();
         }
@@ -340,7 +346,8 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
     function getHealthFactor(address user) public view returns (uint256 healthFactor) {
         (uint256 totalDsc, uint256 collateralValue) = getAccountInformation(user);
         uint256 collateralAdjustedForThreshold = (collateralValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
-        healthFactor = collateralAdjustedForThreshold / totalDsc;
+        healthFactor = collateralAdjustedForThreshold * 1e18 / totalDsc;
+        console.log("Health Factor:", healthFactor);
         return healthFactor;
     }
 
@@ -378,14 +385,14 @@ contract DSCEngine is ReentrancyGuard, IDSCEngine {
         returns (uint256 collateralValueInUsd)
     {
         AggregatorV3Interface pricefeed = AggregatorV3Interface(s_pricefeeds[collateralTokenAddress]);
-        (, int256 answer,,,) = pricefeed.latestRoundData();
+        (, int256 answer,,,) = pricefeed.staleCheckLatestRoundData();
         collateralValueInUsd += ((uint256(answer) * ADDITIONAL_FEED_PRECISION) * collateralAmount) / PRECISION;
         return collateralValueInUsd;
     }
 
     function getLatestRoundDataValue(address collateralTokenAddress) public view returns (uint256) {
         AggregatorV3Interface pricefeed = AggregatorV3Interface(s_pricefeeds[collateralTokenAddress]);
-        (, int256 answer,,,) = pricefeed.latestRoundData();
+        (, int256 answer,,,) = pricefeed.staleCheckLatestRoundData();
         return uint256(answer);
     }
 
